@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FormFieldError } from '@/components/ui/form-field-error';
 import { cn } from '@/lib/utils';
 import { SkeletonAttendanceCard } from '@/components/ui/skeleton';
+import { buildAttendancePlan, getAttendanceRiskLabel } from '@/domain/attendancePlanning';
 
 interface AttendanceEditorProps {
   semesterId?: string;
@@ -47,6 +48,10 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
   const updateAttendance = useUpdateAttendance();
   const deleteAttendance = useDeleteAttendance();
   const { toast } = useToast();
+
+  const filteredRecords = semesterId
+    ? attendanceRecords.filter((record: AttendanceRecord) => record.semester_id === semesterId)
+    : attendanceRecords as AttendanceRecord[];
   
   // Determine which subjects to show based on whether semester is selected
   const availableSubjects = (formData.semester_id || semesterId) 
@@ -65,10 +70,6 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
   
   // Allow manual entry option
   const [useManualEntry, setUseManualEntry] = useState(false);
-
-  const filteredRecords = semesterId 
-    ? attendanceRecords.filter((record: { semester_id: string }) => record.semester_id === semesterId)
-    : attendanceRecords;
 
   // Get existing subject names for duplicate detection
   const existingNames = filteredRecords
@@ -118,7 +119,12 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
 
     // Special case: if total_classes changes, revalidate attended_classes
     if (field === 'total_classes' && touched.attended_classes) {
-      const attendedError = validateField('attended_classes', formData.attended_classes);
+      const nextTotal = Number(value) || 0;
+      const nextAttended = Math.min(formData.attended_classes, nextTotal);
+      if (nextAttended !== formData.attended_classes) {
+        setFormData(prev => ({ ...prev, attended_classes: nextAttended }));
+      }
+      const attendedError = validateField('attended_classes', nextAttended);
       setErrors(prev => ({ ...prev, attended_classes: attendedError || undefined }));
     }
   };
@@ -266,8 +272,7 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
   };
 
   const getPreviewPercentage = () => {
-    if (formData.total_classes === 0) return 0;
-    return Math.round((formData.attended_classes / formData.total_classes) * 100 * 100) / 100;
+    return buildAttendancePlan(formData.attended_classes, formData.total_classes).percentage;
   };
 
   if (isLoading) {
@@ -507,7 +512,7 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
                     size="sm"
                     className="h-10 w-10"
                     onClick={() => {
-                      const newValue = formData.attended_classes + 1;
+                      const newValue = Math.min(formData.attended_classes + 1, formData.total_classes);
                       handleFieldChange('attended_classes', newValue);
                     }}
                   >
@@ -542,8 +547,11 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
                     Percentage: {getPreviewPercentage()}%
                   </p>
                   <Badge className={getAttendanceStatus(getPreviewPercentage()).color}>
-                    {getAttendanceStatus(getPreviewPercentage()).status}
+                    {getAttendanceRiskLabel(buildAttendancePlan(formData.attended_classes, formData.total_classes).riskLevel)}
                   </Badge>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {buildAttendancePlan(formData.attended_classes, formData.total_classes).message}
+                  </p>
                 </div>
               )}
 
@@ -567,9 +575,10 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
             <p>No attendance records added yet</p>
           </div>
         ) : (
-          filteredRecords.map((record: { id: string; subject_name: string; percentage?: number; attended_classes: number; total_classes: number; note?: string; semester_id: string }) => {
-            const attendanceStatus = getAttendanceStatus(record.percentage || 0);
-            const isLow = (record.percentage || 0) < 75;
+          filteredRecords.map((record: AttendanceRecord) => {
+            const plan = buildAttendancePlan(record.attended_classes, record.total_classes);
+            const attendanceStatus = getAttendanceStatus(plan.percentage);
+            const isLow = plan.riskLevel === 'critical';
             
             return (
               <div key={record.id} className={`flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow ${isLow ? 'border-red-200 bg-red-50' : ''}`}>
@@ -587,9 +596,10 @@ export function AttendanceEditor({ semesterId }: AttendanceEditorProps) {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>{record.attended_classes} / {record.total_classes} classes</span>
-                    <span className="font-medium">{record.percentage?.toFixed(1)}%</span>
-                    {isLow && <span className="text-red-600">⚠️ Below 75%</span>}
+                    <span className="font-medium">{plan.percentage.toFixed(1)}%</span>
+                    {isLow && <span className="text-red-600">Below 75%</span>}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1">{plan.message}</p>
                   {record.note && (
                     <p className="text-sm text-muted-foreground mt-1">{record.note}</p>
                   )}

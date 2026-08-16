@@ -12,6 +12,7 @@ import { useCreateAttendance, useUpdateAttendance, useDeleteAttendance, useSemes
 import { useSubjectsBySemester } from '@/hooks/useSubjects';
 import { getAttendanceStatus } from '@/utils/gradeCalculations';
 import type { AttendanceRecord } from '@/services/academicService';
+import { buildAttendancePlan, getAttendanceRiskLabel } from '@/domain/attendancePlanning';
 
 interface ActiveAttendanceCardProps {
   records: AttendanceRecord[];
@@ -204,9 +205,9 @@ export function ActiveAttendanceCard({ records }: ActiveAttendanceCardProps) {
           </Card>
         ) : (
           records.map((record) => {
-            const percentage = record.total_classes > 0 ? (record.attended_classes / record.total_classes) * 100 : 0;
-            const { status, color } = getAttendanceStatus(percentage);
-            const isLowAttendance = percentage < 75;
+            const attendancePlan = buildAttendancePlan(record.attended_classes, record.total_classes);
+            const { color } = getAttendanceStatus(attendancePlan.percentage);
+            const isLowAttendance = attendancePlan.riskLevel === 'critical';
 
             return (
               <Card key={record.id} className={`${isLowAttendance ? 'border-red-200 bg-red-50' : ''}`}>
@@ -216,8 +217,8 @@ export function ActiveAttendanceCard({ records }: ActiveAttendanceCardProps) {
                       <CardTitle className="text-lg">{record.subject_name}</CardTitle>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline">{getSemesterName(record.semester_id)}</Badge>
-                        <Badge className={color}>{status}</Badge>
-                        {isLowAttendance && <Badge variant="destructive">⚠️ Low</Badge>}
+                        <Badge className={color}>{getAttendanceRiskLabel(attendancePlan.riskLevel)}</Badge>
+                        {isLowAttendance && <Badge variant="destructive">Below Minimum</Badge>}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -248,15 +249,16 @@ export function ActiveAttendanceCard({ records }: ActiveAttendanceCardProps) {
                       <div className="text-muted-foreground">Present</div>
                     </div>
                     <div className="text-center p-2 bg-muted rounded">
-                      <div className="text-lg font-semibold">{record.total_classes - record.attended_classes}</div>
+                      <div className="text-lg font-semibold">{Math.max(0, record.total_classes - record.attended_classes)}</div>
                       <div className="text-muted-foreground">Absent</div>
                     </div>
                   </div>
                   <div className="text-center mb-4">
-                    <div className="text-2xl font-bold">{percentage.toFixed(1)}%</div>
+                    <div className="text-2xl font-bold">{attendancePlan.percentage.toFixed(1)}%</div>
                     <div className="text-sm text-muted-foreground">
                       {record.attended_classes} / {record.total_classes} classes
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">{attendancePlan.message}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -316,7 +318,11 @@ export function ActiveAttendanceCard({ records }: ActiveAttendanceCardProps) {
                       if (/^\d+$/.test(value)) {
                         const numValue = parseInt(value, 10);
                         if (!isNaN(numValue)) {
-                          setEditingRecord({ ...editingRecord, total_classes: numValue });
+                          setEditingRecord({
+                            ...editingRecord,
+                            total_classes: numValue,
+                            attended_classes: Math.min(editingRecord.attended_classes, numValue),
+                          });
                         }
                       }
                     }}
