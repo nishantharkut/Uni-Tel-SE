@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { subjectService, type Subject } from '@/services/academicService';
+import { subjectService, type SubjectUpdate } from '@/services/academicService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useSubjects = () => {
@@ -45,7 +45,7 @@ export const useUpdateSubject = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Subject> }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: SubjectUpdate }) =>
       subjectService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });

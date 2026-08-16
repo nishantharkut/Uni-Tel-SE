@@ -1,114 +1,101 @@
-import { supabase } from '@/integrations/supabase/client';
+import {
+  attendanceService,
+  marksService,
+  semesterService,
+  subjectService,
+  type AttendanceRecord,
+  type MarksRecord,
+  type Semester,
+  type Subject,
+} from '@/services/academicService';
+import {
+  calculateAcademicAchievements,
+  calculateAttendanceAnalytics,
+  calculateGradeDistributionAnalytics,
+  calculateMarksPerformanceAnalytics,
+  calculateSemesterPerformanceTrends,
+  type AcademicAchievement,
+  type AttendanceAnalytics,
+  type GradeDistributionAnalytics,
+  type MarksPerformanceAnalytics,
+  type SemesterPerformanceTrend,
+} from '@/domain/analyticsCalculations';
 
-// Analytics interfaces
-export interface SemesterPerformanceTrend {
-  semester_number: number;
-  sgpa: number | null;
-  total_credits: number | null;
-  subjects_count: number;
-  average_attendance: number | null;
-  total_marks_records: number;
+export type {
+  AcademicAchievement,
+  AttendanceAnalytics,
+  GradeDistributionAnalytics,
+  MarksPerformanceAnalytics,
+  SemesterPerformanceTrend,
+};
+
+interface AnalyticsSourceData {
+  semesters: Semester[];
+  subjects: Subject[];
+  attendance: AttendanceRecord[];
+  marks: MarksRecord[];
 }
 
-export interface GradeDistributionAnalytics {
-  grade: string;
-  count: number;
-  percentage: number;
-  total_credits: number;
+async function loadAnalyticsSourceData(): Promise<AnalyticsSourceData> {
+  const [semesters, subjects, attendance, marks] = await Promise.all([
+    semesterService.getAll(),
+    subjectService.getAll(),
+    attendanceService.getAll(),
+    marksService.getAll(),
+  ]);
+
+  return {
+    semesters: semesters as Semester[],
+    subjects: subjects as Subject[],
+    attendance: attendance as AttendanceRecord[],
+    marks: marks as MarksRecord[],
+  };
 }
 
-export interface AttendanceAnalytics {
-  total_subjects: number;
-  average_attendance: number;
-  good_attendance_count: number;
-  poor_attendance_count: number;
-  critical_attendance_count: number;
-  attendance_trend: number;
-}
-
-export interface MarksPerformanceAnalytics {
-  total_exams: number;
-  average_percentage: number;
-  excellent_performance_count: number;
-  good_performance_count: number;
-  average_performance_count: number;
-  poor_performance_count: number;
-  performance_trend: number;
-}
-
-export interface AcademicAchievement {
-  achievement_type: string;
-  achievement_description: string;
-  achieved: boolean;
-  progress_percentage: number;
-  target_value: number;
-  current_value: number;
-}
-
-// Analytics service
 export const analyticsService = {
-  // Get semester-wise performance trends
   async getSemesterPerformanceTrends(): Promise<SemesterPerformanceTrend[]> {
-    const { data, error } = await supabase
-      .rpc('get_semester_performance_trends');
-    if (error) throw error;
-    return data || [];
+    const { semesters, subjects, attendance, marks } = await loadAnalyticsSourceData();
+    return calculateSemesterPerformanceTrends(semesters, subjects, attendance, marks);
   },
 
-  // Get grade distribution analytics
   async getGradeDistributionAnalytics(): Promise<GradeDistributionAnalytics[]> {
-    const { data, error } = await supabase
-      .rpc('get_grade_distribution_analytics');
-    if (error) throw error;
-    return data || [];
+    const subjects = await subjectService.getAll();
+    return calculateGradeDistributionAnalytics(subjects as Subject[]);
   },
 
-  // Get attendance analytics
   async getAttendanceAnalytics(): Promise<AttendanceAnalytics | null> {
-    const { data, error } = await supabase
-      .rpc('get_attendance_analytics');
-    if (error) throw error;
-    return data?.[0] || null;
+    const attendance = await attendanceService.getAll();
+    return calculateAttendanceAnalytics(attendance as AttendanceRecord[]);
   },
 
-  // Get marks performance analytics
   async getMarksPerformanceAnalytics(): Promise<MarksPerformanceAnalytics | null> {
-    const { data, error } = await supabase
-      .rpc('get_marks_performance_analytics');
-    if (error) throw error;
-    return data?.[0] || null;
+    const marks = await marksService.getAll();
+    return calculateMarksPerformanceAnalytics(marks as MarksRecord[]);
   },
 
-  // Get academic achievements
   async getAcademicAchievements(): Promise<AcademicAchievement[]> {
-    const { data, error } = await supabase
-      .rpc('get_academic_achievements');
-    if (error) throw error;
-    return data || [];
-  },
-
-  // Get comprehensive analytics dashboard data
-  async getDashboardAnalytics() {
-    const [
-      semesterTrends,
-      gradeDistribution,
-      attendanceAnalytics,
-      marksAnalytics,
-      achievements
-    ] = await Promise.all([
-      this.getSemesterPerformanceTrends(),
-      this.getGradeDistributionAnalytics(),
-      this.getAttendanceAnalytics(),
-      this.getMarksPerformanceAnalytics(),
-      this.getAcademicAchievements()
+    const [subjects, attendance, marks] = await Promise.all([
+      subjectService.getAll(),
+      attendanceService.getAll(),
+      marksService.getAll(),
     ]);
 
+    return calculateAcademicAchievements(
+      subjects as Subject[],
+      attendance as AttendanceRecord[],
+      marks as MarksRecord[]
+    );
+  },
+
+  async getDashboardAnalytics() {
+    const { semesters, subjects, attendance, marks } = await loadAnalyticsSourceData();
+
     return {
-      semesterTrends,
-      gradeDistribution,
-      attendanceAnalytics,
-      marksAnalytics,
-      achievements
+      semesterTrends: calculateSemesterPerformanceTrends(semesters, subjects, attendance, marks),
+      gradeDistribution: calculateGradeDistributionAnalytics(subjects),
+      attendanceAnalytics: calculateAttendanceAnalytics(attendance),
+      marksAnalytics: calculateMarksPerformanceAnalytics(marks),
+      achievements: calculateAcademicAchievements(subjects, attendance, marks),
     };
-  }
+  },
 };
