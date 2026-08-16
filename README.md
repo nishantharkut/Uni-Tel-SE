@@ -92,9 +92,15 @@ These names match the variables consumed by `src/integrations/supabase/client.ts
 
 ### Database
 
-The imported database assets are stored in `supabase/migrations/`, `supabase/functions/`, and `tables schema/`. The existing setup guide identifies `supabase/migrations/20250827194740_9e5b13e5-435d-4c91-8fe6-a28d520bf2c0.sql` as the baseline schema.
+Fresh Supabase setup is documented in [docs/database/supabase-setup.md](docs/database/supabase-setup.md).
 
-The migration filenames do not currently represent a verified zero-to-latest bootstrap order. Review and test the scripts against a disposable Supabase project before applying them to a shared or production database.
+The database source of truth is one baseline migration:
+
+```text
+supabase/migrations/20260817000000_initial_schema.sql
+```
+
+It creates the profile, academic, notification, and preference tables; RLS policies; triggers; calculation functions; validation RPCs; and compatibility views required by the app. The old imported patch migrations were intentionally removed because this branch targets a new Supabase project with no live migration history.
 
 ### Run locally
 
@@ -132,8 +138,8 @@ Uni-Tel-SE/
 |   +-- utils/                    Calculations, exports, loading, and navigation helpers
 |-- supabase/
 |   |-- functions/                Supabase edge functions
-|   +-- migrations/               Database migration history
-|-- tables schema/                Table-level SQL references
+|   +-- migrations/               Fresh database baseline migration
+|-- docs/database/                Supabase setup and verification guide
 |-- docs/planning/                Software Engineering plans
 |-- output/pdf/                   Compiled project documents
 +-- landing page inspos/          Retained visual reference templates
@@ -156,7 +162,7 @@ The master plan covers lifecycle selection, team roles, governance, requirements
 | Static analysis | ESLint is configured; the imported baseline currently reports 58 errors and 7 warnings |
 | Automated tests | No automated test suite or `test` script is currently configured |
 | Continuous integration | No GitHub Actions workflow is currently present |
-| Database bootstrap | Migration history exists but requires consolidation and clean-environment verification |
+| Database bootstrap | Clean fresh-project baseline exists at `supabase/migrations/20260817000000_initial_schema.sql`; apply it with `supabase db push` or the SQL Editor and run the verification SQL in `docs/database/supabase-setup.md` |
 
 These entries describe the imported baseline honestly and identify the quality work that remains for the Software Engineering project.
 
