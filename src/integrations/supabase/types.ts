@@ -31,7 +31,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
-          percentage?: number | null
+          percentage?: never
           semester_id: string
           source_json_import?: boolean
           subject_name: string
@@ -44,7 +44,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
-          percentage?: number | null
+          percentage?: never
           semester_id?: string
           source_json_import?: boolean
           subject_name?: string
@@ -87,7 +87,7 @@ export type Database = {
           exam_type: string
           id?: string
           obtained_marks?: number
-          percentage?: number | null
+          percentage?: never
           semester_id: string
           source_json_import?: boolean
           subject_name: string
@@ -95,7 +95,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           weightage?: number
-          weighted_percentage?: number | null
+          weighted_percentage?: never
         }
         Update: {
           created_at?: string
@@ -104,7 +104,7 @@ export type Database = {
           exam_type?: string
           id?: string
           obtained_marks?: number
-          percentage?: number | null
+          percentage?: never
           semester_id?: string
           source_json_import?: boolean
           subject_name?: string
@@ -112,7 +112,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weightage?: number
-          weighted_percentage?: number | null
+          weighted_percentage?: never
         }
         Relationships: [
           {
@@ -246,7 +246,7 @@ export type Database = {
           grade_points: number | null
           id: string
           is_audit: boolean
-          is_backlog: boolean | null
+          is_backlog: boolean
           name: string
           semester_id: string
           source_json_import: boolean
@@ -257,10 +257,10 @@ export type Database = {
           created_at?: string
           credits: number
           grade?: string | null
-          grade_points?: number | null
+          grade_points?: never
           id?: string
           is_audit?: boolean
-          is_backlog?: boolean | null
+          is_backlog?: never
           name: string
           semester_id: string
           source_json_import?: boolean
@@ -271,10 +271,10 @@ export type Database = {
           created_at?: string
           credits?: number
           grade?: string | null
-          grade_points?: number | null
+          grade_points?: never
           id?: string
           is_audit?: boolean
-          is_backlog?: boolean | null
+          is_backlog?: never
           name?: string
           semester_id?: string
           source_json_import?: boolean

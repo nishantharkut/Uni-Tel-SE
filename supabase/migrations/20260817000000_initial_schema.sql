@@ -179,7 +179,7 @@ create table public.subjects (
   credits integer not null,
   grade text,
   grade_points numeric(3,1) generated always as (public.grade_to_points(grade)) stored,
-  is_backlog boolean generated always as (grade = 'F') stored,
+  is_backlog boolean generated always as (coalesce(grade = 'F', false)) stored not null,
   is_audit boolean not null default false,
   source_json_import boolean not null default false,
   created_at timestamptz not null default now(),
