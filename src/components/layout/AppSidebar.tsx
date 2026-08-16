@@ -26,15 +26,6 @@ import {
   Download,
   Upload,
   MoreHorizontal,
-  Palette,
-  Images,
-  Thumbtack,
-  Heart,
-  ChartLine,
-  Fire,
-  Magic,
-  Gem,
-  CaretUp,
   PanelLeftClose,
   PanelLeftOpen
 } from "lucide-react"
