@@ -24,13 +24,18 @@ import {
   TrendingDown,
   TrendingUp as TrendingUpIcon
 } from 'lucide-react';
-import { useAcademicSummary } from '@/hooks/useAcademicSummary';
+import { useAcademicSummary, useAttendance, useMarks, useSemesters, useSubjects } from '@/hooks/useAcademic';
 import { LazyPerformanceTrends } from '@/components/academic/LazyPerformanceTrends';
+import { AcademicDataHealthPanel } from '@/components/academic/AcademicDataHealthPanel';
 import { Link } from 'react-router-dom';
 import { PageLoader } from '@/components/ui/PageLoader';
 
 export default function Index() {
   const { data: summary, isLoading } = useAcademicSummary();
+  const { data: semesters = [] } = useSemesters();
+  const { data: subjects = [] } = useSubjects();
+  const { data: attendance = [] } = useAttendance();
+  const { data: marks = [] } = useMarks();
 
   if (isLoading) {
     return (
@@ -246,6 +251,14 @@ export default function Index() {
             </CardContent>
           </Card>
         </div>
+
+        <AcademicDataHealthPanel
+          semesters={semesters}
+          subjects={subjects}
+          attendance={attendance}
+          marks={marks}
+          compact
+        />
 
         {/* Main Content Grid - Responsive Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">

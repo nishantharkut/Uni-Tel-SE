@@ -30,6 +30,7 @@ import { AnalyticsInsights } from '@/components/academic/AnalyticsInsights';
 import { QuickStats } from '@/components/academic/QuickStats';
 import { SemesterComparison } from '@/components/academic/SemesterComparison';
 import { StudentPlanningPanel } from '@/components/academic/StudentPlanningPanel';
+import { AcademicDataHealthPanel } from '@/components/academic/AcademicDataHealthPanel';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -264,6 +265,13 @@ export default function Analytics() {
           subjects={subjects}
           marks={marks}
           currentCGPA={summary?.cgpa || null}
+        />
+
+        <AcademicDataHealthPanel
+          semesters={semesters}
+          subjects={subjects}
+          attendance={attendance}
+          marks={marks}
         />
 
         {/* Key Metrics Cards - Responsive Grid */}
