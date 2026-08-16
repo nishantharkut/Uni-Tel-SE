@@ -1,361 +1,170 @@
-# UNI-TEL: Your One-Stop Platform for Academics
+<p align="center">
+  <img src="public/logo.png" alt="UNI-TEL logo" width="320">
+</p>
 
-[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-2.56.0-green.svg)](https://supabase.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-blue.svg)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-5.4.19-purple.svg)](https://vitejs.dev/)
+<h1 align="center">UNI-TEL</h1>
 
-> A comprehensive academic management platform designed to help students track their academic progress, manage semesters, monitor attendance, and analyze performance with beautiful, modern UI.
+<p align="center">
+  Student academic record management and performance analytics in one web application.
+</p>
 
-## 🌟 Features
+<p align="center">
+  <a href="https://react.dev/"><img alt="React 18" src="https://img.shields.io/badge/React-18.3-20232A?logo=react&logoColor=61DAFB"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white"></a>
+  <a href="https://vite.dev/"><img alt="Vite 5" src="https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white"></a>
+  <a href="https://supabase.com/"><img alt="Supabase" src="https://img.shields.io/badge/Supabase-2.56-3FCF8E?logo=supabase&logoColor=white"></a>
+  <a href="https://tailwindcss.com/"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white"></a>
+</p>
 
-### ✅ **Currently Implemented**
+## Overview
 
-#### 📊 **Academic Management**
-- **Semester Management**: Create and organize academic semesters
-- **Subject Tracking**: Add subjects with credits and grades
-- **Grade Calculation**: Automatic SGPA/CGPA computation
-- **Attendance Monitoring**: Track class attendance with percentage calculations
-- **Marks Management**: Record exam scores with weightage system
-- **Performance Analytics**: Comprehensive charts and insights
+UNI-TEL is a student-focused academic management application for organizing semesters and subjects, recording attendance and marks, calculating SGPA and CGPA, and examining academic performance.
 
-#### 🎨 **User Interface**
-- **Modern Design**: Beautiful, responsive UI with shadcn/ui components
-- **Dark/Light Mode**: Theme switching capability
-- **Mobile-First**: Optimized for all device sizes
-- **Accessibility**: ARIA labels and keyboard navigation
-- **Smooth Animations**: Fluid transitions and micro-interactions
+The application is a React single-page application backed by Supabase authentication and PostgreSQL data. This repository also serves as the working repository for a five-member Software Engineering class project. Its planning package defines the lifecycle, requirements, traceability, testing, risk, documentation, and presentation work required during the five-day project window.
 
-#### 🔧 **Technical Features**
-- **Real-time Updates**: Instant data synchronization
-- **Data Import/Export**: JSON-based data portability
-- **Authentication**: Secure user management with Supabase Auth
-- **Responsive Design**: Fluid typography and spacing
-- **Type Safety**: Full TypeScript implementation
+## Implemented capabilities
 
-### 🚧 **Planned Features**
+| Area | Current capability |
+| --- | --- |
+| Identity and access | Supabase authentication, persisted sessions, protected routes, and user profiles |
+| Academic structure | Semester and subject management with credits, grades, SGPA, and CGPA calculations |
+| Attendance | Subject-level attendance records, percentage tracking, editing, and heatmap views |
+| Marks | Assessment records with marks, weightage, examination date and time, and custom assessment types |
+| Analytics | Performance trends, grade distribution, semester comparison, and academic summaries |
+| Data portability | JSON import and backup, PDF transcript export, and XLSX workbook export |
+| Application experience | Responsive navigation, lazy-loaded routes, notifications, settings, and error boundaries |
 
-#### 📚 **Knowledge Hub** (In Development)
-- File upload and sharing system
-- Document organization and search
-- Study material management
-- Peer collaboration tools
+## System architecture
 
-#### 👥 **Social Features** (Roadmap)
-- Study groups and communities
-- Peer performance comparison
-- Achievement system and leaderboards
-- Collaborative study sessions
+```mermaid
+flowchart LR
+    Student[Student] --> SPA[React and TypeScript SPA]
+    SPA --> UI[Pages and UI components]
+    UI --> State[Hooks and TanStack Query]
+    State --> Services[Academic and analytics services]
+    Services --> Client[Supabase client]
+    Client --> Auth[Supabase Auth]
+    Client --> Database[(PostgreSQL with RLS)]
+    Client --> Function[Import edge function]
+    UI --> Export[JSON, PDF, and XLSX exports]
+```
 
-#### 🤖 **AI-Powered Insights** (Future)
-- Grade prediction algorithms
-- Personalized study recommendations
-- Attendance pattern analysis
-- Performance optimization tips
+The browser application separates presentation components, reusable hooks, service functions, and database access. Supabase provides identity, persistence, database functions, and row-level access policies. Export operations are generated in the browser.
 
-#### 🏢 **Enterprise Features** (Long-term)
-- Multi-user support (teachers/students)
-- Class management and bulk operations
-- Advanced reporting and analytics
-- LMS integrations
+## Technology stack
 
-## 🚀 Quick Start
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Web application | React 18, TypeScript 5, Vite 5 | Component model, static typing, development server, and production build |
+| Routing and server state | React Router, TanStack Query | Route protection, navigation, caching, and asynchronous state |
+| Interface | Tailwind CSS, Radix UI, shadcn/ui patterns | Responsive layout and reusable accessible primitives |
+| Forms and validation | React Hook Form, Zod | Form state and schema-based validation |
+| Backend | Supabase | Authentication, PostgreSQL access, database functions, and edge functions |
+| Analytics | Recharts | Performance charts and distributions |
+| Data exchange | jsPDF, jsPDF-AutoTable, SheetJS | PDF and XLSX generation |
+
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
-- Supabase account
+- Node.js 18 or later
+- npm
+- A Supabase project for authenticated and persistent workflows
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/UNI-TEL.git
-   cd UNI-TEL
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Add your Supabase credentials:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-   ```
-
-4. **Database Setup**
-   ```bash
-   # Run the migration in your Supabase dashboard
-   # Copy the SQL from supabase/migrations/20250827194740_9e5b13e5-435d-4c91-8fe6-a28d520bf2c0.sql
-   ```
-
-5. **Start Development Server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-6. **Open in Browser**
-   ```
-   http://localhost:5173
-   ```
-
-## 🏗️ Project Structure
-
-```
-UNI-TEL/
-├── public/                 # Static assets
-├── src/
-│   ├── components/         # React components
-│   │   ├── academic/       # Academic-specific components
-│   │   ├── auth/          # Authentication components
-│   │   ├── layout/        # Layout components
-│   │   └── ui/            # Reusable UI components
-│   ├── hooks/             # Custom React hooks
-│   ├── integrations/      # External service integrations
-│   │   └── supabase/      # Supabase client and types
-│   ├── lib/               # Utility libraries
-│   ├── pages/             # Page components
-│   ├── services/          # API services
-│   └── utils/             # Helper functions
-├── supabase/              # Supabase configuration
-│   ├── functions/         # Edge functions
-│   └── migrations/        # Database migrations
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-└── vite.config.ts
-```
-
-## 🗄️ Database Schema
-
-### Core Tables
-
-#### `profiles`
-- User profile information
-- College and role management
-- Avatar and personal details
-
-#### `semesters`
-- Academic semester tracking
-- SGPA calculation and storage
-- Credit hour management
-
-#### `subjects`
-- Subject/course information
-- Grade and credit tracking
-- Semester relationships
-
-#### `attendance_records`
-- Class attendance tracking
-- Percentage calculations
-- Subject-specific records
-
-#### `marks_records`
-- Exam and test scores
-- Weightage system
-- Performance tracking
-
-### Key Features
-- **Row Level Security (RLS)**: User data isolation
-- **Automatic Calculations**: SGPA/CGPA computation
-- **Data Validation**: Grade and credit constraints
-- **Audit Trails**: Created/updated timestamps
-
-## 🎨 Design System
-
-### Color Palette
-- **Primary**: Academic blue (`hsl(217, 91%, 60%)`)
-- **Success**: Academic green (`hsl(142, 76%, 36%)`)
-- **Warning**: Academic orange (`hsl(38, 92%, 50%)`)
-- **Danger**: Academic red (`hsl(0, 84%, 60%)`)
-
-### Typography
-- **Font Family**: Inter (headings), System fonts (body)
-- **Responsive Scale**: Fluid typography with clamp()
-- **Accessibility**: WCAG 2.1 AA compliant
-
-### Components
-- **Cards**: Academic-themed with gradients
-- **Buttons**: Touch-friendly with proper sizing
-- **Forms**: Mobile-optimized inputs
-- **Charts**: Interactive data visualization
-
-## 🔧 Development
-
-### Available Scripts
-
 ```bash
-# Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-
-# Code Quality
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript type checking
-
-# Database
-npm run db:reset     # Reset database (if configured)
+git clone https://github.com/nishantharkut/Uni-Tel-SE.git
+cd Uni-Tel-SE
+npm ci
 ```
 
-### Code Style
-- **ESLint**: Configured with TypeScript and React rules
-- **Prettier**: Code formatting (recommended)
-- **TypeScript**: Strict mode enabled
-- **Conventional Commits**: Recommended commit format
+### Environment
 
-### Testing
-```bash
-# Add testing framework (recommended)
-npm install --save-dev vitest @testing-library/react
-```
+Create `.env.local` in the repository root:
 
-## 📱 Mobile Support
-
-### Progressive Web App (PWA)
-- **Service Worker**: Offline functionality (planned)
-- **App Manifest**: Installable on mobile devices
-- **Responsive Design**: Mobile-first approach
-- **Touch Optimization**: Proper touch targets (44px minimum)
-
-### Mobile Features
-- **Swipe Gestures**: Navigation and interactions
-- **Pull-to-Refresh**: Data synchronization
-- **Offline Support**: Local data caching (planned)
-
-## 🔐 Security
-
-### Authentication
-- **Supabase Auth**: Secure user management
-- **JWT Tokens**: Stateless authentication
-- **Session Management**: Automatic token refresh
-
-### Data Protection
-- **Row Level Security**: Database-level access control
-- **Input Validation**: Client and server-side validation
-- **XSS Protection**: Sanitized user inputs
-- **CSRF Protection**: Request validation
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-### Environment Variables
 ```env
-# Production
-VITE_SUPABASE_URL=your_production_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_production_key
+VITE_SUPABASE_URL=https://example.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=replace-with-browser-safe-key
 ```
 
-### Build Optimization
-- **Code Splitting**: Automatic route-based splitting
-- **Tree Shaking**: Unused code elimination
-- **Asset Optimization**: Image and font optimization
-- **Bundle Analysis**: Size monitoring
+These names match the variables consumed by `src/integrations/supabase/client.ts`. Use only the browser-safe publishable or anonymous key; never expose a Supabase service-role key in a Vite environment variable.
 
-## 📊 Performance
+### Database
 
-### Current Metrics
-- **First Contentful Paint**: < 1.5s
-- **Largest Contentful Paint**: < 2.5s
-- **Cumulative Layout Shift**: < 0.1
-- **First Input Delay**: < 100ms
+The imported database assets are stored in `supabase/migrations/`, `supabase/functions/`, and `tables schema/`. The existing setup guide identifies `supabase/migrations/20250827194740_9e5b13e5-435d-4c91-8fe6-a28d520bf2c0.sql` as the baseline schema.
 
-### Optimization Strategies
-- **Lazy Loading**: Route and component splitting
-- **Memoization**: React.memo and useMemo
-- **Virtual Scrolling**: Large list optimization
-- **Image Optimization**: WebP format and lazy loading
+The migration filenames do not currently represent a verified zero-to-latest bootstrap order. Review and test the scripts against a disposable Supabase project before applying them to a shared or production database.
 
-## 🤝 Contributing
+### Run locally
 
-### Getting Started
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+npm run dev
+```
 
-### Development Guidelines
-- **Code Style**: Follow existing patterns
-- **TypeScript**: Maintain type safety
-- **Testing**: Add tests for new features
-- **Documentation**: Update README for significant changes
+Vite serves the application at `http://localhost:5173` by default.
 
-### Issue Reporting
-- Use GitHub Issues for bug reports
-- Provide detailed reproduction steps
-- Include browser and device information
-- Add screenshots for UI issues
+## Available commands
 
-## 📄 License
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Create the production bundle in `dist/` |
+| `npm run build:dev` | Build with Vite's development mode |
+| `npm run lint` | Run ESLint across the repository |
+| `npm run preview` | Serve the production bundle locally |
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Repository structure
 
-## 🙏 Acknowledgments
+```text
+Uni-Tel-SE/
+|-- public/                       Application logo and static assets
+|-- src/
+|   |-- components/
+|   |   |-- academic/             Attendance, marks, analytics, and semester UI
+|   |   |-- auth/                 Authentication interface
+|   |   |-- layout/               Header, sidebar, and application layout
+|   |   +-- ui/                   Shared interface primitives
+|   |-- hooks/                    Authentication and academic data hooks
+|   |-- integrations/supabase/    Generated database types and client
+|   |-- pages/                    Route-level application pages
+|   |-- services/                 Academic, analytics, import, and notification logic
+|   +-- utils/                    Calculations, exports, loading, and navigation helpers
+|-- supabase/
+|   |-- functions/                Supabase edge functions
+|   +-- migrations/               Database migration history
+|-- tables schema/                Table-level SQL references
+|-- docs/planning/                Software Engineering plans
+|-- output/pdf/                   Compiled project documents
++-- landing page inspos/          Retained visual reference templates
+```
 
-- **shadcn/ui**: Beautiful component library
-- **Supabase**: Backend-as-a-Service platform
-- **React**: Frontend framework
-- **Tailwind CSS**: Utility-first CSS framework
-- **Lucide React**: Icon library
+## Software Engineering documentation
 
-## 📞 Support
+The repository includes the following planning artifacts:
 
-- **Documentation**: [Wiki](https://github.com/your-username/UNI-TEL/wiki)
-- **Issues**: [GitHub Issues](https://github.com/your-username/UNI-TEL/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/UNI-TEL/discussions)
-- **Email**: support@uni-tel.com
+- [Five-Day Software Engineering Master Plan](docs/planning/UNI-TEL_5-Day_SE_Master_Plan.md)
+- [Compiled Master Plan PDF](output/pdf/UNI-TEL_5-Day_SE_Master_Plan.pdf)
 
-## 🗺️ Roadmap
+The master plan covers lifecycle selection, team roles, governance, requirements, architecture, testing, traceability, risk, change control, deployment, reporting, and presentation. It is a planning baseline; artifacts identified as required in the plan must still be produced and reviewed during project execution.
 
-### Phase 1: Foundation (Q1 2024)
-- [x] Core academic management
-- [x] User authentication
-- [x] Basic analytics
-- [ ] Error handling improvements
-- [ ] Settings page completion
+## Engineering status
 
-### Phase 2: Enhancement (Q2 2024)
-- [ ] Knowledge Hub implementation
-- [ ] Advanced search functionality
-- [ ] Activity tracking system
-- [ ] Mobile app (PWA)
+| Check | Current state |
+| --- | --- |
+| Production build | `npm run build` completes successfully |
+| Static analysis | ESLint is configured; the imported baseline currently reports 58 errors and 7 warnings |
+| Automated tests | No automated test suite or `test` script is currently configured |
+| Continuous integration | No GitHub Actions workflow is currently present |
+| Database bootstrap | Migration history exists but requires consolidation and clean-environment verification |
 
-### Phase 3: Intelligence (Q3 2024)
-- [ ] AI-powered insights
-- [ ] Predictive analytics
-- [ ] Smart recommendations
-- [ ] Performance optimization
+These entries describe the imported baseline honestly and identify the quality work that remains for the Software Engineering project.
 
-### Phase 4: Scale (Q4 2024)
-- [ ] Multi-user support
-- [ ] Enterprise features
-- [ ] API access
-- [ ] Third-party integrations
+## Contribution workflow
 
----
-
-**Made with ❤️ for students worldwide**
-
-*UNI-TEL - Empowering academic success through technology*
+1. Select a documented requirement, defect, or project task.
+2. Create a focused branch such as `feature/attendance-shortage`, `fix/sgpa-calculation`, or `docs/setup-guide`.
+3. Use Conventional Commit messages, for example `feat(attendance): add shortage warning`.
+4. Run the relevant build, lint, and test commands and record the results.
+5. Open a pull request that states the scope, linked requirement, verification evidence, risks, and reviewer.
+6. Keep commits and pull requests reviewable and below the repository's 7,000-LOC change limit.
