@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -11,38 +10,55 @@ export function JsonImportGuide() {
         number: 1,
         subjects: [
           {
-            name: "Mathematics I",
+            name: 'Mathematics I',
             credits: 4,
-            grade: "A"
+            grade: 'A',
           },
           {
-            name: "Physics",
+            name: 'Physics',
             credits: 3,
-            grade: "B"
+            grade: 'B',
           },
           {
-            name: "Chemistry",
+            name: 'Chemistry',
             credits: 3,
-            grade: "A-"
-          }
-        ]
+            grade: 'A-',
+          },
+        ],
+        attendance: [
+          {
+            subject_name: 'Mathematics I',
+            total_classes: 28,
+            attended_classes: 24,
+            note: 'Includes approved leave',
+          },
+        ],
+        marks: [
+          {
+            subject_name: 'Mathematics I',
+            exam_type: 'Minor Examination',
+            total_marks: 30,
+            obtained_marks: 25,
+            weightage: 30,
+          },
+        ],
       },
       {
         number: 2,
         subjects: [
           {
-            name: "Mathematics II",
+            name: 'Mathematics II',
             credits: 4,
-            grade: "A-"
+            grade: 'A-',
           },
           {
-            name: "Computer Science",
+            name: 'Computer Science',
             credits: 4,
-            grade: "A"
-          }
-        ]
-      }
-    ]
+            grade: 'A',
+          },
+        ],
+      },
+    ],
   };
 
   return (
@@ -50,7 +66,7 @@ export function JsonImportGuide() {
       <div>
         <h3 className="text-lg font-semibold mb-2">JSON Import Guide</h3>
         <p className="text-muted-foreground mb-4">
-          Follow this guide to properly format your semester and subject data for import.
+          Format semester, subject, attendance, and marks data before importing it into UNI-TEL.
         </p>
       </div>
 
@@ -68,16 +84,18 @@ export function JsonImportGuide() {
                 The JSON must contain a root <Badge variant="outline">semesters</Badge> array with semester objects.
               </AlertDescription>
             </Alert>
-            
+
             <div className="space-y-3">
               <div>
                 <h4 className="font-medium flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4" />
                   Semester Object
                 </h4>
-                <ul className="text-sm space-y-1 ml-6">
-                  <li><Badge variant="outline">number</Badge> - Semester number (required)</li>
+                <ul className="text-sm space-y-1 ml-6 list-disc">
+                  <li><Badge variant="outline">number</Badge> - Semester number from 1 to 12 (required)</li>
                   <li><Badge variant="outline">subjects</Badge> - Array of subject objects (optional)</li>
+                  <li><Badge variant="outline">attendance</Badge> - Array of attendance records (optional)</li>
+                  <li><Badge variant="outline">marks</Badge> - Array of marks records (optional)</li>
                 </ul>
               </div>
 
@@ -86,10 +104,10 @@ export function JsonImportGuide() {
                   <BookOpen className="w-4 h-4" />
                   Subject Object
                 </h4>
-                <ul className="text-sm space-y-1 ml-6">
+                <ul className="text-sm space-y-1 ml-6 list-disc">
                   <li><Badge variant="outline">name</Badge> - Subject name (required)</li>
-                  <li><Badge variant="outline">credits</Badge> - Credit hours (required)</li>
-                  <li><Badge variant="outline">grade</Badge> - Grade letter (optional)</li>
+                  <li><Badge variant="outline">credits</Badge> - Credit hours from 1 to 6 (required)</li>
+                  <li><Badge variant="outline">grade</Badge> - A, A-, B, B-, C, C-, D, or F (optional)</li>
                 </ul>
               </div>
             </div>
@@ -110,11 +128,12 @@ export function JsonImportGuide() {
         <Alert>
           <AlertDescription>
             <strong>Important Notes:</strong>
-            <ul className="mt-2 space-y-1">
-              <li>• All fields marked as "required" must be present</li>
-              <li>• Grade letters should be: A, A-, B, B-, C, C-, D, E, F, I</li>
-              <li>• The import will create semesters and subjects automatically</li>
-              <li>• Attendance and marks should be managed separately in their dedicated pages</li>
+            <ul className="mt-2 space-y-1 ml-5 list-disc">
+              <li>All required fields must be present.</li>
+              <li>A(-), B(-), and C(-) are normalized to A-, B-, and C- automatically.</li>
+              <li>Attendance requires attended classes to be between 0 and total classes.</li>
+              <li>Marks can be scheduled with 0 total marks only when obtained marks is also 0.</li>
+              <li>Assessment weightage follows IIITM limits: minor up to 30%, internal up to 30%, and major up to 50%.</li>
             </ul>
           </AlertDescription>
         </Alert>

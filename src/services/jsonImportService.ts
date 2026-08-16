@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeGrade } from '@/domain/academicRules';
 
 export interface ImportData {
   semesters?: Array<{
@@ -20,6 +21,9 @@ export interface ImportData {
       exam_type: string;
       total_marks: number;
       obtained_marks: number;
+      weightage?: number;
+      exam_date?: string;
+      exam_time?: string;
     }>;
   }>;
 }
@@ -35,6 +39,8 @@ export interface ImportResult {
   };
   errors?: string[];
 }
+
+type ExportSemesterRow = NonNullable<ImportData['semesters']>[number];
 
 function normaliseSemesterNumber(val: unknown): number {
   const parsed = parseInt(String(val).trim(), 10);
@@ -62,6 +68,10 @@ function normaliseImportData(data: ImportData): ImportData {
     const parsed = parseInt(String(val), 10);
     return isNaN(parsed) ? (val as number) : parsed;
   };
+  const toNumber = (val: unknown): number => {
+    const parsed = parseFloat(String(val));
+    return isNaN(parsed) ? (val as number) : parsed;
+  };
 
   return {
     ...data,
@@ -71,6 +81,7 @@ function normaliseImportData(data: ImportData): ImportData {
       subjects: (sem.subjects ?? []).map(sub => ({
         ...sub,
         credits: toInt(sub.credits),
+        grade: normalizeGrade(sub.grade) ?? undefined,
       })),
       attendance: (sem.attendance ?? []).map(att => ({
         ...att,
@@ -81,6 +92,7 @@ function normaliseImportData(data: ImportData): ImportData {
         ...mark,
         total_marks: toInt(mark.total_marks),
         obtained_marks: toInt(mark.obtained_marks),
+        weightage: mark.weightage === undefined ? undefined : toNumber(mark.weightage),
       })),
     })),
   };
@@ -110,20 +122,19 @@ export const jsonImportService = {
 
   async exportData(): Promise<ImportData | null> {
     try {
-      const { data: semesters } = await supabase
-        .from('semesters')
+      const { data: semesters } = await (supabase.from('semesters') as any)
         .select(`
           number,
           subjects:subjects!inner(name, credits, grade),
           attendance:attendance_records(subject_name, total_classes, attended_classes, note),
-          marks:marks_records(subject_name, exam_type, total_marks, obtained_marks)
+          marks:marks_records(subject_name, exam_type, total_marks, obtained_marks, weightage, exam_date, exam_time)
         `)
         .order('number');
 
       if (!semesters) return null;
 
       return {
-        semesters: semesters.map(semester => ({
+        semesters: (semesters as ExportSemesterRow[]).map(semester => ({
           number: normaliseSemesterNumber(semester.number),
           subjects: semester.subjects || [],
           attendance: semester.attendance || [],

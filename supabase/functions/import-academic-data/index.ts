@@ -26,6 +26,9 @@ interface ImportData {
       exam_type: string;
       total_marks: number;
       obtained_marks: number;
+      weightage?: number;
+      exam_date?: string;
+      exam_time?: string;
     }>;
   }>;
 }
@@ -54,6 +57,40 @@ function normaliseSemesterNumber(value: unknown): number {
   }
 
   return parsed
+}
+
+const GPA_GRADES = ['A', 'A-', 'B', 'B-', 'C', 'C-', 'D', 'F']
+
+function normaliseGrade(value: unknown): string | null {
+  if (value === undefined || value === null) return null
+
+  const grade = String(value).trim().toUpperCase()
+  if (!grade) return null
+
+  if (grade === 'A(-)') return 'A-'
+  if (grade === 'B(-)') return 'B-'
+  if (grade === 'C(-)') return 'C-'
+
+  return grade
+}
+
+function isValidGrade(value: unknown): boolean {
+  const grade = normaliseGrade(value)
+  return grade === null || GPA_GRADES.includes(grade)
+}
+
+function getWeightageLimit(examType: string): number {
+  const value = examType.trim().toLowerCase()
+  if (value.includes('minor') || value.includes('mid')) return 30
+  if (value.includes('major') || value.includes('end')) return 50
+  return 30
+}
+
+function isValidMarks(obtainedMarks: number, totalMarks: number): boolean {
+  if (!Number.isFinite(obtainedMarks) || !Number.isFinite(totalMarks)) return false
+  if (totalMarks < 0 || obtainedMarks < 0) return false
+  if (totalMarks === 0) return obtainedMarks === 0
+  return obtainedMarks <= totalMarks
 }
 
 serve(async (req) => {
@@ -152,11 +189,29 @@ serve(async (req) => {
         if (semesterData.subjects && semesterData.subjects.length > 0) {
           for (const subjectData of semesterData.subjects) {
             try {
+              if (!String(subjectData.name || '').trim()) {
+                result.errors?.push('Subject: name is required')
+                continue
+              }
+
               const subCredits = parseInt(String(subjectData.credits), 10)
               if (isNaN(subCredits)) {
                 result.errors?.push(`Subject ${subjectData.name}: invalid credits value "${subjectData.credits}"`)
                 continue
               }
+
+              if (subCredits < 1 || subCredits > 6) {
+                result.errors?.push(`Subject ${subjectData.name}: credits must be between 1 and 6`)
+                continue
+              }
+
+              if (!isValidGrade(subjectData.grade)) {
+                result.errors?.push(`Subject ${subjectData.name}: grade must be one of A, A-, B, B-, C, C-, D, or F`)
+                continue
+              }
+
+              const normalisedGrade = normaliseGrade(subjectData.grade)
+
               const { error: subjectError } = await supabaseClient
                 .from('subjects')
                 .upsert({
@@ -164,7 +219,7 @@ serve(async (req) => {
                   semester_id: semester.id,
                   name: subjectData.name,
                   credits: subCredits,
-                  grade: subjectData.grade,
+                  grade: normalisedGrade,
                   source_json_import: true
                 }, {
                   onConflict: 'user_id,semester_id,name'
@@ -185,12 +240,23 @@ serve(async (req) => {
         if (semesterData.attendance && semesterData.attendance.length > 0) {
           for (const attendanceData of semesterData.attendance) {
             try {
+              if (!String(attendanceData.subject_name || '').trim()) {
+                result.errors?.push('Attendance: subject name is required')
+                continue
+              }
+
               const totalClasses = parseInt(String(attendanceData.total_classes), 10)
               const attendedClasses = parseInt(String(attendanceData.attended_classes), 10)
               if (isNaN(totalClasses) || isNaN(attendedClasses)) {
                 result.errors?.push(`Attendance ${attendanceData.subject_name}: invalid class count values`)
                 continue
               }
+
+              if (totalClasses < 0 || attendedClasses < 0 || attendedClasses > totalClasses) {
+                result.errors?.push(`Attendance ${attendanceData.subject_name}: attended classes must be between 0 and total classes`)
+                continue
+              }
+
               const { error: attendanceError } = await supabaseClient
                 .from('attendance_records')
                 .upsert({
@@ -220,12 +286,37 @@ serve(async (req) => {
         if (semesterData.marks && semesterData.marks.length > 0) {
           for (const marksData of semesterData.marks) {
             try {
+              if (!String(marksData.subject_name || '').trim()) {
+                result.errors?.push('Marks: subject name is required')
+                continue
+              }
+
               const totalMarks = parseInt(String(marksData.total_marks), 10)
               const obtainedMarks = parseInt(String(marksData.obtained_marks), 10)
               if (isNaN(totalMarks) || isNaN(obtainedMarks)) {
                 result.errors?.push(`Marks ${marksData.subject_name} ${marksData.exam_type}: invalid marks values`)
                 continue
               }
+
+              if (!String(marksData.exam_type || '').trim()) {
+                result.errors?.push(`Marks ${marksData.subject_name}: exam type is required`)
+                continue
+              }
+
+              if (!isValidMarks(obtainedMarks, totalMarks)) {
+                result.errors?.push(`Marks ${marksData.subject_name} ${marksData.exam_type}: marks must be non-negative and obtained marks cannot exceed total marks`)
+                continue
+              }
+
+              const weightage = marksData.weightage === undefined
+                ? getWeightageLimit(marksData.exam_type)
+                : parseFloat(String(marksData.weightage))
+
+              if (!Number.isFinite(weightage) || weightage < 0 || weightage > getWeightageLimit(marksData.exam_type)) {
+                result.errors?.push(`Marks ${marksData.subject_name} ${marksData.exam_type}: weightage cannot exceed ${getWeightageLimit(marksData.exam_type)}% for this assessment type`)
+                continue
+              }
+
               const { error: marksError } = await supabaseClient
                 .from('marks_records')
                 .insert({
@@ -235,6 +326,9 @@ serve(async (req) => {
                   exam_type: marksData.exam_type,
                   total_marks: totalMarks,
                   obtained_marks: obtainedMarks,
+                  weightage,
+                  exam_date: marksData.exam_date,
+                  exam_time: marksData.exam_time,
                   source_json_import: true
                 })
 
