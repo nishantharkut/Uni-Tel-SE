@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCallback, useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { NotificationService } from '@/services/notificationService';
+import { useAuth } from '@/hooks/useAuth';
+import { useAcademicSummary, useAttendance, useMarks, useSubjects } from '@/hooks/useAcademic';
+import {
+  NotificationService,
+  type StoredNotification,
+} from '@/services/notificationService';
+import { buildAcademicNotifications } from '@/services/academicNotificationRules';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  read: boolean;
-  created_at: string;
-  action_url?: string;
-  action_text?: string;
+export interface Notification extends StoredNotification {}
+
+function countUnread(notifications: Notification[]): number {
+  return notifications.filter((notification) => !notification.read).length;
 }
 
 export function useNotifications() {
@@ -19,78 +20,122 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
+  const { preferences } = useUserPreferences();
+  const { data: attendance = [], isLoading: attendanceLoading } = useAttendance();
+  const { data: marks = [], isLoading: marksLoading } = useMarks();
+  const { data: subjects = [], isLoading: subjectsLoading } = useSubjects();
+  const { data: summary, isLoading: summaryLoading } = useAcademicSummary();
 
-  useEffect(() => {
-    loadNotifications();
-    const cleanup = setupRealtimeSubscription();
-    return cleanup;
+  const updateNotificationState = useCallback((nextNotifications: Notification[]) => {
+    setNotifications(nextNotifications);
+    setUnreadCount(countUnread(nextNotifications));
   }, []);
 
-  const loadNotifications = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const loadNotifications = useCallback(async () => {
+    if (authLoading) return;
 
-      const result = await NotificationService.getNotifications();
+    try {
+      const result = await NotificationService.getNotifications(user?.id);
       if (result.success) {
-        setNotifications(result.notifications);
-        setUnreadCount(result.notifications.filter((n: Notification) => !n.read).length);
+        updateNotificationState(result.notifications);
       }
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [authLoading, updateNotificationState, user?.id]);
 
-  const setupRealtimeSubscription = () => {
-    // In production, you'd set up real-time subscriptions for notifications
-    // For now, we'll only load notifications on mount and when explicitly created
-    // No automatic random notifications - they should be contextually relevant
-    return () => {};
-  };
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const academicDataLoading = attendanceLoading || marksLoading || subjectsLoading || summaryLoading;
+    if (authLoading || academicDataLoading) return;
+
+    const generatedNotifications = buildAcademicNotifications({
+      attendance,
+      marks,
+      subjects,
+      summary,
+      preferences,
+    });
+
+    NotificationService.syncAcademicNotifications(generatedNotifications, user?.id)
+      .then((result) => {
+        if (result.success) {
+          updateNotificationState(result.notifications);
+        }
+      })
+      .catch((error) => {
+        console.error('Error syncing academic notifications:', error);
+      })
+      .finally(() => setLoading(false));
+  }, [
+    attendance,
+    attendanceLoading,
+    authLoading,
+    marks,
+    marksLoading,
+    preferences,
+    subjects,
+    subjectsLoading,
+    summary,
+    summaryLoading,
+    updateNotificationState,
+    user?.id,
+  ]);
 
   const markAsRead = async (notificationId: string) => {
-    const result = await NotificationService.markAsRead(notificationId);
+    const result = await NotificationService.markAsRead(notificationId, user?.id);
     if (result.success) {
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        )
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications((current) => {
+        const next = current.map((notification) =>
+          notification.id === notificationId ? { ...notification, read: true } : notification
+        );
+        setUnreadCount(countUnread(next));
+        return next;
+      });
     }
   };
 
   const markAllAsRead = async () => {
-    const result = await NotificationService.markAllAsRead();
+    const result = await NotificationService.markAllAsRead(user?.id);
     if (result.success) {
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-      setUnreadCount(0);
+      setNotifications((current) => {
+        const next = current.map((notification) => ({ ...notification, read: true }));
+        setUnreadCount(0);
+        return next;
+      });
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
-    const result = await NotificationService.deleteNotification(notificationId);
+    const result = await NotificationService.deleteNotification(notificationId, user?.id);
     if (result.success) {
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications((current) => {
+        const next = current.filter((notification) => notification.id !== notificationId);
+        setUnreadCount(countUnread(next));
+        return next;
+      });
     }
   };
 
   const createNotification = async (notification: Omit<Notification, 'id' | 'created_at' | 'read'>) => {
-    const result = await NotificationService.createNotification(notification);
-    if (result.success) {
-      setNotifications(prev => [result.notification, ...prev]);
-      setUnreadCount(prev => prev + 1);
+    const result = await NotificationService.createNotification(notification, user?.id);
+    if (result.success && result.notification) {
+      setNotifications((current) => {
+        const next = [result.notification, ...current];
+        setUnreadCount(countUnread(next));
+        return next;
+      });
 
-      // Show toast
       toast({
         title: notification.title,
         description: notification.message,
-        variant: notification.type === 'error' ? 'destructive' : 'default'
+        variant: notification.type === 'error' ? 'destructive' : 'default',
       });
     }
   };
@@ -102,6 +147,6 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    createNotification
+    createNotification,
   };
 }

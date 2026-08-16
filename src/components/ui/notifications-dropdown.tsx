@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Bell, Check, X, ExternalLink } from 'lucide-react';
+import { Bell, X, ExternalLink, CheckCircle, AlertTriangle, XCircle, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,29 +13,29 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { formatDistanceToNow } from 'date-fns';
 
 export function NotificationsDropdown() {
   const [open, setOpen] = useState(false);
-  const { 
-    notifications, 
-    loading, 
-    unreadCount, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification 
+  const navigate = useNavigate();
+  const {
+    notifications,
+    loading,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
   } = useNotifications();
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'success':
-        return '✅';
+        return <CheckCircle className="h-5 w-5" />;
       case 'warning':
-        return '⚠️';
+        return <AlertTriangle className="h-5 w-5" />;
       case 'error':
-        return '❌';
+        return <XCircle className="h-5 w-5" />;
       default:
-        return 'ℹ️';
+        return <Info className="h-5 w-5" />;
     }
   };
 
@@ -55,7 +57,7 @@ export function NotificationsDropdown() {
       markAsRead(notification.id);
     }
     if (notification.action_url) {
-      window.location.href = notification.action_url;
+      navigate(notification.action_url);
     }
     setOpen(false);
   };
@@ -66,16 +68,16 @@ export function NotificationsDropdown() {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            <Badge
+              variant="destructive"
+              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center p-0 text-xs"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)] sm:max-w-none">
         <DropdownMenuLabel className="flex items-center justify-between">
           <div>
@@ -95,9 +97,9 @@ export function NotificationsDropdown() {
             </Button>
           )}
         </DropdownMenuLabel>
-        
+
         <Separator />
-        
+
         <ScrollArea className="h-64 sm:h-96">
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
@@ -112,19 +114,17 @@ export function NotificationsDropdown() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`group p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
-                    !notification.read ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
+                  className={`group cursor-pointer rounded-lg p-3 transition-colors hover:bg-muted/50 ${
+                    !notification.read ? 'border-l-2 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <span className="text-lg">
-                        {getNotificationIcon(notification.type)}
-                      </span>
+                    <div className={`mt-0.5 flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                      {getNotificationIcon(notification.type)}
                     </div>
-                    
-                    <div className="flex-1 min-w-0">
+
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <h5 className={`text-sm font-medium ${getNotificationColor(notification.type)}`}>
                           {notification.title}
@@ -132,25 +132,25 @@ export function NotificationsDropdown() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={(event) => {
+                            event.stopPropagation();
                             deleteNotification(notification.id);
                           }}
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                      
-                      <p className="text-sm text-muted-foreground mt-1">
+
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {notification.message}
                       </p>
-                      
-                      <div className="flex items-center justify-between mt-2">
+
+                      <div className="mt-2 flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                         </span>
-                        
+
                         {notification.action_url && (
                           <div className="flex items-center gap-1 text-xs text-primary">
                             <ExternalLink className="h-3 w-3" />
