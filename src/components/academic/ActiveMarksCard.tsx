@@ -10,16 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Calculator, Target } from 'lucide-react';
 import { useCreateMarks, useUpdateMarks, useDeleteMarks, useSemesters } from '@/hooks/useAcademic';
 import type { MarksRecord } from '@/services/academicService';
+import { DEFAULT_EXAM_TYPES, getWeightageLimit } from '@/domain/academicRules';
 
-const EXAM_TYPES = [
-  { name: 'Mid Term', defaultWeight: 30 },
-  { name: 'End Term', defaultWeight: 50 },
-  { name: 'Quiz', defaultWeight: 5 },
-  { name: 'Assignment', defaultWeight: 10 },
-  { name: 'Lab Exam', defaultWeight: 15 },
-  { name: 'Viva', defaultWeight: 10 },
-  { name: 'Project', defaultWeight: 20 }
-];
+const EXAM_TYPES = DEFAULT_EXAM_TYPES.map((name) => ({
+  name,
+  defaultWeight: getWeightageLimit(name),
+}));
 
 interface MarksRecordWithWeight extends MarksRecord {
   weightage?: number;
@@ -37,7 +33,7 @@ export function ActiveMarksCard({ records }: ActiveMarksCardProps) {
     exam_type: '',
     total_marks: 100,
     obtained_marks: 0,
-    weightage: 50,
+    weightage: getWeightageLimit('Other'),
     semester_id: ''
   });
 
@@ -54,6 +50,7 @@ export function ActiveMarksCard({ records }: ActiveMarksCardProps) {
       exam_type: newRecord.exam_type,
       total_marks: newRecord.total_marks,
       obtained_marks: newRecord.obtained_marks,
+      weightage: newRecord.weightage,
       semester_id: newRecord.semester_id,
       source_json_import: false
     });
@@ -63,7 +60,7 @@ export function ActiveMarksCard({ records }: ActiveMarksCardProps) {
       exam_type: '',
       total_marks: 100,
       obtained_marks: 0,
-      weightage: 50,
+      weightage: getWeightageLimit('Other'),
       semester_id: ''
     });
     setIsAddDialogOpen(false);
@@ -234,12 +231,18 @@ export function ActiveMarksCard({ records }: ActiveMarksCardProps) {
                     if (/^\d+$/.test(value)) {
                       const numValue = parseInt(value, 10);
                       if (!isNaN(numValue)) {
-                        setNewRecord({ ...newRecord, weightage: Math.min(Math.max(numValue, 0), 100) });
+                          setNewRecord({
+                            ...newRecord,
+                            weightage: Math.min(Math.max(numValue, 0), getWeightageLimit(newRecord.exam_type)),
+                          });
                       }
                     }
                   }}
                   placeholder="e.g., 30"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Maximum allowed for this assessment type: {getWeightageLimit(newRecord.exam_type)}%
+                </p>
               </div>
               {newRecord.total_marks > 0 && (
                 <div className="p-3 bg-muted rounded-lg">
@@ -376,8 +379,46 @@ export function ActiveMarksCard({ records }: ActiveMarksCardProps) {
                 <Label>Exam Type</Label>
                 <Input
                   value={editingRecord.exam_type}
-                  onChange={(e) => setEditingRecord({ ...editingRecord, exam_type: e.target.value })}
+                  onChange={(e) => {
+                    const examType = e.target.value;
+                    setEditingRecord({
+                      ...editingRecord,
+                      exam_type: examType,
+                      weightage: Math.min(
+                        editingRecord.weightage ?? getWeightageLimit(examType),
+                        getWeightageLimit(examType)
+                      ),
+                    });
+                  }}
                 />
+              </div>
+              <div>
+                <Label>Weightage (%)</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={editingRecord.weightage === 0 ? '' : String(editingRecord.weightage ?? getWeightageLimit(editingRecord.exam_type))}
+                  onChange={(e) => {
+                    const value = e.target.value.trim();
+                    if (value === '') {
+                      setEditingRecord({ ...editingRecord, weightage: 0 });
+                      return;
+                    }
+                    if (/^\d+$/.test(value)) {
+                      const numValue = parseInt(value, 10);
+                      if (!isNaN(numValue)) {
+                        setEditingRecord({
+                          ...editingRecord,
+                          weightage: Math.min(Math.max(numValue, 0), getWeightageLimit(editingRecord.exam_type)),
+                        });
+                      }
+                    }
+                  }}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Maximum allowed for this assessment type: {getWeightageLimit(editingRecord.exam_type)}%
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

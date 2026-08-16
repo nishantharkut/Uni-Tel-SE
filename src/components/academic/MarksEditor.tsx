@@ -9,9 +9,8 @@ import { Edit, Plus, Trash2, FileText, Target, Calendar as CalendarIcon } from '
 import { useMarks, useCreateMarks, useUpdateMarks, useDeleteMarks, useSemesters, useSubjectsBySemester, useSubjects } from '@/hooks/useAcademic';
 import type { MarksRecord } from '@/services/academicService';
 import { SkeletonList } from '@/components/ui/skeleton';
-
-// Default exam types - user can create custom ones
-const DEFAULT_EXAM_TYPES = ['Quiz', 'Mid Term', 'End Term', 'Assignment', 'Lab Exam', 'Viva', 'Project', 'Presentation', 'Practical', 'Other'];
+import { DEFAULT_EXAM_TYPES, getWeightageLimit } from '@/domain/academicRules';
+import { useToast } from '@/hooks/use-toast';
 
 interface MarksEditorProps {
   semesterId?: string;
@@ -25,7 +24,7 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
     exam_type: '',
     total_marks: 0,
     obtained_marks: 0,
-    weightage: 100,
+    weightage: getWeightageLimit('Other'),
     semester_id: semesterId || '',
     exam_date: '',
     exam_time: '',
@@ -43,6 +42,7 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
   const createMarks = useCreateMarks();
   const updateMarks = useUpdateMarks();
   const deleteMarks = useDeleteMarks();
+  const { toast } = useToast();
   
   // Determine which subjects to show based on whether semester is selected
   const availableSubjects = (formData.semester_id || semesterId) 
@@ -87,9 +87,14 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
   // Add new custom exam type
   const handleAddExamType = () => {
     if (newExamType.trim() && !customExamTypes.includes(newExamType.trim())) {
-      const updated = [...customExamTypes, newExamType.trim()];
+      const examType = newExamType.trim();
+      const updated = [...customExamTypes, examType];
       saveCustomExamTypes(updated);
-      setFormData({ ...formData, exam_type: newExamType.trim() });
+      setFormData({
+        ...formData,
+        exam_type: examType,
+        weightage: getWeightageLimit(examType),
+      });
       setNewExamType('');
       setShowAddExamType(false);
     }
@@ -113,7 +118,7 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
       ...formData,
       total_marks: formData.total_marks || 0,
       obtained_marks: formData.obtained_marks || 0,
-      weightage: formData.weightage || 100,
+      weightage: formData.weightage || getWeightageLimit(formData.exam_type),
       exam_date: formData.exam_date || undefined,
       exam_time: formData.exam_time || undefined
     };
@@ -148,7 +153,10 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
       exam_type: record.exam_type,
       total_marks: record.total_marks,
       obtained_marks: record.obtained_marks,
-      weightage: (record as any).weightage || 100,
+      weightage: Math.min(
+        (record as any).weightage || getWeightageLimit(record.exam_type),
+        getWeightageLimit(record.exam_type)
+      ),
       semester_id: record.semester_id,
       exam_date: record.exam_date || '',
       exam_time: record.exam_time || '',
@@ -175,7 +183,7 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
       exam_type: '',
       total_marks: 0,
       obtained_marks: 0,
-      weightage: 100,
+      weightage: getWeightageLimit('Other'),
       semester_id: semesterId || '',
       exam_date: '',
       exam_time: '',
@@ -318,7 +326,11 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
                       if (value === '__create_new__') {
                         setShowAddExamType(true);
                       } else {
-                        setFormData({ ...formData, exam_type: value });
+                        setFormData({
+                          ...formData,
+                          exam_type: value,
+                          weightage: getWeightageLimit(value),
+                        });
                       }
                     }}
                   >
@@ -409,19 +421,22 @@ export function MarksEditor({ semesterId }: MarksEditorProps) {
                       if (/^\d*\.?\d*$/.test(value)) {
                         const numValue = parseFloat(value);
                         if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-                          setFormData({ ...formData, weightage: numValue });
+                          setFormData({
+                            ...formData,
+                            weightage: Math.min(numValue, getWeightageLimit(formData.exam_type)),
+                          });
                         }
                       }
                     }}
                     onBlur={(e) => {
                       if (e.target.value === '') {
-                        setFormData({ ...formData, weightage: 100 });
+                        setFormData({ ...formData, weightage: getWeightageLimit(formData.exam_type) });
                       }
                     }}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    You can enter marks later. For now, just set the weightage.
+                    Maximum allowed for this assessment type: {getWeightageLimit(formData.exam_type)}%
                   </p>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateSubject, useUpdateSubject, useSubjects } from '@/hooks/useAcademic';
 import { BookOpen, GraduationCap, Save, Plus } from 'lucide-react';
-import { gradeToPoints } from '@/utils/gradeCalculations';
+import { getValidGrades, gradeToPoints } from '@/utils/gradeCalculations';
 import { useToast } from '@/hooks/use-toast';
 import { FormFieldError } from '@/components/ui/form-field-error';
 import { cn } from '@/lib/utils';
@@ -19,7 +19,7 @@ interface SubjectDialogProps {
   editingSubject?: { id: string; name: string; credits: number; grade?: string; semester_id: string } | null;
 }
 
-const GRADES = ['A', 'A-', 'B', 'B-', 'C', 'C-', 'D', 'E', 'F', 'I'];
+const GRADES = getValidGrades();
 
 export function SubjectDialog({ open, onOpenChange, semesterId, editingSubject }: SubjectDialogProps) {
   const [name, setName] = useState('');
@@ -60,8 +60,8 @@ export function SubjectDialog({ open, onOpenChange, semesterId, editingSubject }
     if (!value || value < 1) {
       return 'Credits must be at least 1';
     }
-    if (value > 10) {
-      return 'Credits cannot exceed 10';
+    if (value > 6) {
+      return 'Credits cannot exceed 6';
     }
     return null;
   };
@@ -225,7 +225,7 @@ export function SubjectDialog({ open, onOpenChange, semesterId, editingSubject }
                   }
                   if (/^\d+$/.test(value)) {
                     const numValue = parseInt(value, 10);
-                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 10) {
+                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 6) {
                       setCredits(numValue);
                       if (creditsTouched) {
                         validateCredits(numValue);

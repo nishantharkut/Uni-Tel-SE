@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useSemesters, useSubjects, useAttendance, useMarks, useAcademicSummary } from '@/hooks/useAcademic';
 import { computeCGPA, getGradeColor, getAttendanceStatus } from '@/utils/gradeCalculations';
+import { calculateEarnedCredits, isGpaGrade } from '@/domain/academicRules';
 import { cn } from '@/lib/utils';
 import { AdvancedPerformanceTrends } from '@/components/academic/AdvancedPerformanceTrends';
 import { GradeDistributionHistogram } from '@/components/academic/GradeDistributionHistogram';
@@ -28,6 +29,8 @@ import { ExportButton } from '@/components/academic/ExportButton';
 import { AnalyticsInsights } from '@/components/academic/AnalyticsInsights';
 import { QuickStats } from '@/components/academic/QuickStats';
 import { SemesterComparison } from '@/components/academic/SemesterComparison';
+import { StudentPlanningPanel } from '@/components/academic/StudentPlanningPanel';
+import { AcademicDataHealthPanel } from '@/components/academic/AcademicDataHealthPanel';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -41,6 +44,7 @@ export default function Analytics() {
   const { data: summary, isLoading: summaryLoading } = useAcademicSummary();
 
   const isLoading = semestersLoading || subjectsLoading || attendanceLoading || marksLoading || summaryLoading;
+  const earnedCredits = calculateEarnedCredits(subjects);
 
   // CGPA Trend Data - Calculate CGPA from all subjects up to each semester
   const cgpaTrendData = semesters
@@ -60,7 +64,7 @@ export default function Analytics() {
 
   // Grade Distribution for Pie Chart
   const gradeDistribution = subjects
-    .filter(sub => sub.grade)
+    .filter(sub => isGpaGrade(sub.grade))
     .reduce((acc, sub) => {
       const grade = sub.grade!;
       acc[grade] = (acc[grade] || 0) + 1;
@@ -70,7 +74,7 @@ export default function Analytics() {
   const gradeData = Object.entries(gradeDistribution).map(([grade, count]) => ({
     grade,
     count,
-    percentage: Math.round((count / subjects.filter(s => s.grade).length) * 100)
+    percentage: Math.round((count / subjects.filter(s => isGpaGrade(s.grade)).length) * 100)
   }));
 
   // Attendance Analysis - Fixed calculation
@@ -111,7 +115,7 @@ export default function Analytics() {
         semester: `Sem ${semester.number}`,
         sgpa: semester.sgpa || 0,
         subjects: semesterSubjects.length,
-        credits: semester.total_credits || 0,
+        credits: calculateEarnedCredits(semesterSubjects),
         attendance: avgAttendance
       };
     })
@@ -257,6 +261,19 @@ export default function Analytics() {
           currentCGPA={summary?.cgpa || null}
         />
 
+        <StudentPlanningPanel
+          subjects={subjects}
+          marks={marks}
+          currentCGPA={summary?.cgpa || null}
+        />
+
+        <AcademicDataHealthPanel
+          semesters={semesters}
+          subjects={subjects}
+          attendance={attendance}
+          marks={marks}
+        />
+
         {/* Key Metrics Cards - Responsive Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {/* CGPA Card */}
@@ -299,22 +316,21 @@ export default function Analytics() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-academic-secondary">
-                    {summary?.total_credits || 0}
+                    {earnedCredits}
                   </div>
-                  <p className="text-xs sm:text-sm font-medium text-academic-secondary/80">Total Credits</p>
+                  <p className="text-xs sm:text-sm font-medium text-academic-secondary/80">Earned Credits</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-academic-secondary/70">Progress</span>
+                  <span className="text-academic-secondary/70">Programme target</span>
                   <span className="font-semibold text-academic-secondary">
-                    {summary?.total_credits ? Math.min((summary.total_credits / 160) * 100, 100).toFixed(0) : 0}%
+                    Varies
                   </span>
                 </div>
-                <Progress 
-                  value={summary?.total_credits ? Math.min((summary.total_credits / 160) * 100, 100) : 0} 
-                  className="h-1.5 sm:h-2 bg-academic-secondary/20"
-                />
+                <p className="text-xs text-academic-secondary/70">
+                  IIITM credit requirements differ by programme.
+                </p>
               </div>
             </CardContent>
           </Card>

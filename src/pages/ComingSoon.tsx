@@ -1,293 +1,206 @@
-import { useState, useEffect } from 'react'
-import { 
-  GraduationCap, 
-  BookOpen, 
-  Users, 
-  BarChart3, 
-  Calendar, 
-  FileText,
-  Sparkles,
-  Clock,
-  Mail,
-  Bell,
+import { Link, useLocation } from 'react-router-dom';
+import {
   ArrowRight,
-  Star,
-  Zap
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+  BookOpen,
+  BookmarkCheck,
+  ClipboardList,
+  ExternalLink,
+  FileJson,
+  FolderOpen,
+  GraduationCap,
+  Shield,
+  Upload,
+  Users,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-const features = [
+interface ResourceCard {
+  id: string;
+  title: string;
+  description: string;
+  icon: typeof BookOpen;
+  actionLabel: string;
+  href?: string;
+  route?: string;
+  status: 'available' | 'planned' | 'reference';
+}
+
+const resources: ResourceCard[] = [
   {
+    id: 'ordinance',
+    title: 'IIITM Academic Ordinance',
+    description: 'Reference for grades, attendance minimum, credit rules, and assessment structure.',
     icon: GraduationCap,
-    title: "Academic Management",
-    description: "Track semesters, subjects, and academic progress with ease",
-    color: "from-blue-500 to-blue-600"
+    actionLabel: 'Open ordinance',
+    href: 'https://www.iiitm.ac.in/public/uploads/media_uploads/1768561107_UP-IPG-ordinances-2025.pdf',
+    status: 'reference',
   },
   {
-    icon: Calendar,
-    title: "Attendance Tracking", 
-    description: "Monitor attendance records and get insights on your presence",
-    color: "from-green-500 to-green-600"
+    id: 'grading',
+    title: 'Grading Rules Implemented',
+    description: 'UNI-TEL uses IIITM GPA grades, non-GPA handling, earned-credit rules, and backlog detection.',
+    icon: ClipboardList,
+    actionLabel: 'Review subjects',
+    route: '/semesters',
+    status: 'available',
   },
   {
-    icon: FileText,
-    title: "Marks & Grades",
-    description: "Record and analyze your academic performance",
-    color: "from-purple-500 to-purple-600"
+    id: 'attendance',
+    title: 'Attendance Policy Tools',
+    description: 'Track the 75% minimum, safe skips, and required recovery classes from recorded totals.',
+    icon: BookOpen,
+    actionLabel: 'Open attendance',
+    route: '/attendance',
+    status: 'available',
   },
   {
-    icon: BarChart3,
-    title: "Analytics Dashboard",
-    description: "Comprehensive insights into your academic journey",
-    color: "from-orange-500 to-orange-600"
+    id: 'json-import',
+    title: 'JSON Import and Export Guide',
+    description: 'Use JSON backup/restore for semesters, subjects, attendance, and marks records.',
+    icon: FileJson,
+    actionLabel: 'Open settings',
+    route: '/settings',
+    status: 'available',
   },
   {
-    icon: Users,
-    title: "Knowledge Hub",
-    description: "Share and discover academic resources with peers",
-    color: "from-pink-500 to-pink-600"
+    id: 'planning',
+    title: 'Student Planning Tools',
+    description: 'Estimate target CGPA requirements and marks needed in remaining assessment weightage.',
+    icon: BookmarkCheck,
+    actionLabel: 'Open analytics',
+    route: '/analytics',
+    status: 'available',
   },
   {
-    icon: Bell,
-    title: "Smart Notifications",
-    description: "Stay updated with important academic deadlines",
-    color: "from-indigo-500 to-indigo-600"
-  }
-]
+    id: 'hub',
+    title: 'Knowledge Hub Scope',
+    description: 'Resource upload, peer discovery, bookmarking, and moderation are planned as a separate backend-backed module.',
+    icon: FolderOpen,
+    actionLabel: 'Track locally for now',
+    route: '/dashboard',
+    status: 'planned',
+  },
+  {
+    id: 'uploads',
+    title: 'Uploads and Bookmarks',
+    description: 'Upload and bookmark workflows are intentionally marked planned until storage, moderation, and ownership rules are built.',
+    icon: Upload,
+    actionLabel: 'Return to dashboard',
+    route: '/dashboard',
+    status: 'planned',
+  },
+  {
+    id: 'admin',
+    title: 'Admin and Moderation Controls',
+    description: 'Admin users, moderation queues, and role-based controls require backend policy work before release.',
+    icon: Shield,
+    actionLabel: 'Open settings',
+    route: '/settings',
+    status: 'planned',
+  },
+];
+
+function getStatusBadge(status: ResourceCard['status']) {
+  if (status === 'available') return <Badge>Available</Badge>;
+  if (status === 'reference') return <Badge variant="secondary">Reference</Badge>;
+  return <Badge variant="outline">Planned</Badge>;
+}
 
 export default function ComingSoon() {
-  const [email, setEmail] = useState('')
-  const [isSubscribed, setIsSubscribed] = useState(false)
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  })
-
-  // Calculate time until launch (example: 30 days from now)
-  useEffect(() => {
-    const targetDate = new Date()
-    targetDate.setDate(targetDate.getDate() + 30) // 30 days from now
-
-    const timer = setInterval(() => {
-      const now = new Date().getTime()
-      const distance = targetDate.getTime() - now
-
-      if (distance > 0) {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000)
-        })
-      }
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (email) {
-      setIsSubscribed(true)
-      setEmail('')
-      console.log('Subscribed:', email)
-    }
-  }
+  const location = useLocation();
+  const selectedResource = new URLSearchParams(location.search).get('resource');
+  const orderedResources = selectedResource
+    ? [
+        ...resources.filter((resource) => resource.id === selectedResource),
+        ...resources.filter((resource) => resource.id !== selectedResource),
+      ]
+    : resources;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-academic-primary to-academic-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                <GraduationCap className="w-5 h-5 text-white" />
+      <div className="container mx-auto max-w-6xl px-4 py-8 space-y-8">
+        <section className="rounded-3xl color-primary p-6 shadow-xl sm:p-8 lg:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-white/20 p-3">
+                  <GraduationCap className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-white sm:text-3xl">Knowledge Hub Foundation</h1>
+                  <p className="text-sm text-white/80 sm:text-base">
+                    Useful references are available now. Backend-heavy community/admin modules are clearly marked planned.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">UNI-TEL</h1>
-                <p className="text-sm text-muted-foreground">Academic Hub</p>
-              </div>
-            </div>
-            <Badge variant="outline" className="px-3 py-1">
-              <Clock className="w-3 h-3 mr-1" />
-              Coming Soon
-            </Badge>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main>
-        {/* Hero Section */}
-        <section className="py-20 px-6">
-          <div className="container mx-auto max-w-4xl text-center">
-            <div className="mb-8">
-              <Badge className="mb-4 px-4 py-2 text-sm">
-                <Sparkles className="w-3 h-3 mr-2" />
-                Next Generation Academic Platform
-              </Badge>
-              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-academic-primary to-academic-primary/60 bg-clip-text text-transparent mb-6">
-                UNI-TEL
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                The ultimate academic companion that transforms how students manage their educational journey. 
-                Track progress, analyze performance, and achieve academic excellence.
+              <p className="max-w-3xl text-white/85">
+                This page replaces generic placeholder messaging with concrete project scope: what is implemented,
+                what is reference material, and what needs backend work before it should be presented as complete.
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-white/20 text-white hover:bg-white/20">
+                <FolderOpen className="mr-1 h-3 w-3" />
+                Resources
+              </Badge>
+              <Badge className="bg-white/20 text-white hover:bg-white/20">
+                <Users className="mr-1 h-3 w-3" />
+                Planned community module
+              </Badge>
+            </div>
+          </div>
+        </section>
 
-            {/* Countdown Timer */}
-            <Card className="mb-12 max-w-2xl mx-auto">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {orderedResources.map((resource) => (
+            <Card
+              key={resource.id}
+              className={selectedResource === resource.id ? 'border-academic-primary shadow-xl' : 'border-0 shadow-lg'}
+            >
               <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2">
-                  <Zap className="w-5 h-5 text-academic-primary" />
-                  Launch Countdown
-                </CardTitle>
-                <CardDescription>We're putting the finishing touches on your academic hub</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-4 gap-4 text-center">
-                  <div className="bg-academic-primary/10 rounded-lg p-4">
-                    <div className="text-3xl font-bold text-academic-primary">{timeLeft.days}</div>
-                    <div className="text-sm text-muted-foreground">Days</div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="rounded-2xl bg-muted p-3">
+                    <resource.icon className="h-5 w-5 text-academic-primary" />
                   </div>
-                  <div className="bg-academic-primary/10 rounded-lg p-4">
-                    <div className="text-3xl font-bold text-academic-primary">{timeLeft.hours}</div>
-                    <div className="text-sm text-muted-foreground">Hours</div>
-                  </div>
-                  <div className="bg-academic-primary/10 rounded-lg p-4">
-                    <div className="text-3xl font-bold text-academic-primary">{timeLeft.minutes}</div>
-                    <div className="text-sm text-muted-foreground">Minutes</div>
-                  </div>
-                  <div className="bg-academic-primary/10 rounded-lg p-4">
-                    <div className="text-3xl font-bold text-academic-primary">{timeLeft.seconds}</div>
-                    <div className="text-sm text-muted-foreground">Seconds</div>
-                  </div>
+                  {getStatusBadge(resource.status)}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Email Subscription */}
-            <Card className="mb-12 max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="text-center">Get Notified</CardTitle>
-                <CardDescription className="text-center">
-                  Be the first to know when we launch
-                </CardDescription>
+                <CardTitle className="text-xl">{resource.title}</CardTitle>
+                <CardDescription>{resource.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                {!isSubscribed ? (
-                  <form onSubmit={handleSubscribe} className="space-y-4">
-                    <div className="flex gap-2">
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="flex-1"
-                      />
-                      <Button type="submit" className="px-6">
-                        <Mail className="w-4 h-4 mr-2" />
-                        Notify Me
-                      </Button>
-                    </div>
-                  </form>
+                {resource.href ? (
+                  <Button asChild variant="outline" className="w-full justify-between">
+                    <a href={resource.href} target="_blank" rel="noreferrer">
+                      {resource.actionLabel}
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
                 ) : (
-                  <div className="text-center py-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Mail className="w-6 h-6 text-green-600" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Thanks! We'll notify you when we launch.
-                    </p>
-                  </div>
+                  <Button asChild variant="outline" className="w-full justify-between">
+                    <Link to={resource.route || '/dashboard'}>
+                      {resource.actionLabel}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 )}
               </CardContent>
             </Card>
-          </div>
+          ))}
         </section>
 
-        {/* Features Section */}
-        <section className="py-20 px-6 bg-muted/30">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold mb-4">Everything You Need for Academic Success</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                UNI-TEL brings together all the tools you need to excel in your academic journey
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature, index) => (
-                <Card key={index} className="group hover:shadow-lg transition-all duration-300">
-                  <CardHeader>
-                    <div className={`w-12 h-12 bg-gradient-to-r ${feature.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 px-6 bg-gradient-to-r from-academic-primary to-academic-primary/80">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Ready to Transform Your Academic Journey?
-            </h2>
-            <p className="text-white/90 mb-8 max-w-2xl mx-auto">
-              Join thousands of students who are already preparing for a better academic experience
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="px-8">
-                <Bell className="w-4 h-4 mr-2" />
-                Get Early Access
-              </Button>
-              <Button size="lg" variant="outline" className="px-8 bg-white/10 border-white/20 text-white hover:bg-white/20">
-                <ArrowRight className="w-4 h-4 mr-2" />
-                Learn More
-              </Button>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/40 bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center gap-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-academic-primary to-academic-primary/80 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold">UNI-TEL</p>
-                <p className="text-xs text-muted-foreground">Academic Hub</p>
-              </div>
-            </div>
-            <div className="text-center md:text-right">
-              <p className="text-sm text-muted-foreground">
-                © 2024 UNI-TEL. All rights reserved.
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Empowering students worldwide
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle>Engineering note for presentation</CardTitle>
+            <CardDescription>
+              These modules are intentionally separated because upload storage, moderation, and admin controls require
+              database policies and role-based access control. They should be presented as planned extensions, not fake
+              completed features.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     </div>
-  )
+  );
 }
-
-

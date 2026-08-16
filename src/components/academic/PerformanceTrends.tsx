@@ -79,7 +79,7 @@ export function PerformanceTrends() {
 
           {/* Credits Distribution */}
           <div>
-            <h4 className="text-sm font-medium mb-3">Credits per Semester</h4>
+            <h4 className="text-sm font-medium mb-3">Tracked Credits per Semester</h4>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />

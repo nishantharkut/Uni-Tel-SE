@@ -5,7 +5,7 @@
  * throughout the UNI-TEL platform to improve performance and reduce initial bundle size.
  */
 
-import { lazy, ComponentType } from 'react';
+import { lazy, Suspense, ComponentType } from 'react';
 
 /**
  * Creates a lazy-loaded component with proper error boundaries
@@ -13,22 +13,39 @@ import { lazy, ComponentType } from 'react';
  * @param fallbackMessage - Message to show while loading
  * @returns Lazy component with Suspense wrapper
  */
-export function createLazyComponent<T = {}>(
+export function createLazyComponent<T extends object = Record<string, never>>(
   importFn: () => Promise<{ default: ComponentType<T> }>,
   fallbackMessage: string = 'Loading...'
 ) {
-  const LazyComponent = lazy(importFn);
+  const LazyComponent = lazy(importFn) as ComponentType<T>;
   
   return function LazyWrapper(props: T) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="flex items-center gap-3">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-academic-primary/20 border-t-academic-primary"></div>
-          <span className="text-sm text-muted-foreground">{fallbackMessage}</span>
-        </div>
-      </div>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center p-8">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-academic-primary/20 border-t-academic-primary" />
+              <span className="text-sm text-muted-foreground">{fallbackMessage}</span>
+            </div>
+          </div>
+        }
+      >
+        <LazyComponent {...props} />
+      </Suspense>
     );
   };
+}
+
+export function LoadingFallback({ message = 'Loading...' }: { message?: string }) {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="flex items-center gap-3">
+        <div className="animate-spin rounded-full h-5 w-5 border-2 border-academic-primary/20 border-t-academic-primary" />
+        <span className="text-sm text-muted-foreground">{message}</span>
+      </div>
+    </div>
+  );
 }
 
 /**

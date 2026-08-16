@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { attendanceService, type AttendanceRecord } from '@/services/academicService';
+import { attendanceService, type AttendanceRecordUpdate } from '@/services/academicService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAttendance = () => {
@@ -44,7 +44,7 @@ export const useUpdateAttendance = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<AttendanceRecord> }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: AttendanceRecordUpdate }) =>
       attendanceService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });

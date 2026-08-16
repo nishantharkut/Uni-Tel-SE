@@ -3,11 +3,28 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp, Target, Sparkles } from 'lucide-react';
 import { useSemesters, useSubjects } from '@/hooks/useAcademic';
 import { computeCGPA } from '@/utils/gradeCalculations';
+import { calculateEarnedCredits } from '@/domain/academicRules';
 import { cn } from '@/lib/utils';
 
 interface AdvancedPerformanceTrendsProps {
   showPrediction?: boolean;
   targetCGPA?: number;
+}
+
+interface TrendChartPayload {
+  semester?: string;
+  isPrediction?: boolean;
+}
+
+interface TrendTooltipProps {
+  payload?: TrendChartPayload;
+}
+
+interface TrendDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  payload?: TrendChartPayload;
 }
 
 export function AdvancedPerformanceTrends({ 
@@ -25,12 +42,13 @@ export function AdvancedPerformanceTrends({
       const semestersUpToNow = semesters.slice(0, index + 1);
       const semesterIds = semestersUpToNow.map(s => s.id);
       const subjectsUpToNow = subjects.filter(sub => semesterIds.includes(sub.semester_id));
+      const semesterSubjects = subjects.filter(sub => sub.semester_id === semester.id);
       
       return {
         semester: `Sem ${semester.number}`,
         sgpa: semester.sgpa || 0,
         cgpa: computeCGPA(subjectsUpToNow),
-        credits: semester.total_credits || 0
+        credits: calculateEarnedCredits(semesterSubjects)
       };
     })
     .sort((a, b) => parseInt(a.semester.split(' ')[1]) - parseInt(b.semester.split(' ')[1]));
@@ -162,8 +180,8 @@ export function AdvancedPerformanceTrends({
                     borderRadius: '8px',
                     fontSize: '12px'
                   }}
-                  formatter={(value: number, name: string, props: any) => {
-                    if (props.payload.isPrediction) {
+                  formatter={(value: number, name: string, props: TrendTooltipProps) => {
+                    if (props.payload?.isPrediction) {
                       return [`${value.toFixed(2)} (Predicted)`, name];
                     }
                     return [value.toFixed(2), name];
@@ -184,11 +202,12 @@ export function AdvancedPerformanceTrends({
                   stroke="hsl(var(--academic-primary))" 
                   strokeWidth={3}
                   name="CGPA"
-                  dot={(props: any) => {
-                    if (props.payload.isPrediction) {
-                      return <circle cx={props.cx} cy={props.cy} r={5} fill="hsl(var(--academic-accent))" stroke="hsl(var(--academic-accent))" strokeWidth={2} />;
+                  dot={(props: TrendDotProps) => {
+                    const dotKey = `cgpa-dot-${props.index ?? props.payload?.semester ?? props.cx}-${props.payload?.isPrediction ? 'prediction' : 'actual'}`;
+                    if (props.payload?.isPrediction) {
+                      return <circle key={dotKey} cx={props.cx} cy={props.cy} r={5} fill="hsl(var(--academic-accent))" stroke="hsl(var(--academic-accent))" strokeWidth={2} />;
                     }
-                    return <circle cx={props.cx} cy={props.cy} r={4} fill="hsl(var(--academic-primary))" strokeWidth={2} />;
+                    return <circle key={dotKey} cx={props.cx} cy={props.cy} r={4} fill="hsl(var(--academic-primary))" strokeWidth={2} />;
                   }}
                   strokeDasharray={prediction ? undefined : undefined}
                 />

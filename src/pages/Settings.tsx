@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Save, Shield, Bell, Palette, Download, Upload } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { User, Save, Shield, Bell, Download, Upload, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import type { UserPreferences } from '@/services/userPreferencesService';
+import { Link } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -26,6 +29,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { preferences, updatePreferences, resetPreferences } = useUserPreferences();
 
   useEffect(() => {
     loadProfile();
@@ -145,6 +149,25 @@ export default function Settings() {
         variant: 'destructive'
       });
     }
+  };
+
+  const updateNotificationPreference = (
+    key: keyof UserPreferences['notifications'],
+    checked: boolean
+  ) => {
+    updatePreferences({
+      notifications: {
+        [key]: checked,
+      } as Partial<UserPreferences['notifications']>,
+    });
+  };
+
+  const resetAcademicPreferences = () => {
+    resetPreferences();
+    toast({
+      title: 'Preferences reset',
+      description: 'Academic preferences have been reset to defaults.'
+    });
   };
 
   const getInitials = (name: string) => {
@@ -275,21 +298,27 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div>
             <Label>Grade Scale</Label>
-            <Select defaultValue="10-point">
+            <Select
+              value={preferences.gradeScale}
+              onValueChange={(value) => updatePreferences({ gradeScale: value as UserPreferences['gradeScale'] })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10-point">10-Point Scale (A, A-, B, etc.)</SelectItem>
-                <SelectItem value="4-point">4-Point Scale (4.0, 3.7, etc.)</SelectItem>
-                <SelectItem value="percentage">Percentage (0-100%)</SelectItem>
+                <SelectItem value="10-point">10-Point IIITM Scale</SelectItem>
+                <SelectItem value="4-point">4-Point Display Preference</SelectItem>
+                <SelectItem value="percentage">Percentage Display Preference</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
             <Label>Attendance Warning Threshold</Label>
-            <Select defaultValue="75">
+            <Select
+              value={String(preferences.attendanceWarningThreshold)}
+              onValueChange={(value) => updatePreferences({ attendanceWarningThreshold: Number(value) })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -301,6 +330,38 @@ export default function Settings() {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="cgpa-target">CGPA Target</Label>
+              <Input
+                id="cgpa-target"
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                value={preferences.cgpaTarget}
+                onChange={(event) => updatePreferences({ cgpaTarget: Number(event.target.value) })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="exam-reminder-days">Exam Reminder Window (days)</Label>
+              <Input
+                id="exam-reminder-days"
+                type="number"
+                min="0"
+                max="30"
+                step="1"
+                value={preferences.examReminderDays}
+                onChange={(event) => updatePreferences({ examReminderDays: Number(event.target.value) })}
+              />
+            </div>
+          </div>
+
+          <Button variant="outline" size="sm" onClick={resetAcademicPreferences}>
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Reset Academic Preferences
+          </Button>
         </CardContent>
       </Card>
 
@@ -320,7 +381,10 @@ export default function Settings() {
                 Get notified when attendance falls below threshold
               </p>
             </div>
-            <Button variant="outline" size="sm">Enable</Button>
+            <Switch
+              checked={preferences.notifications.attendanceWarnings}
+              onCheckedChange={(checked) => updateNotificationPreference('attendanceWarnings', checked)}
+            />
           </div>
 
           <Separator />
@@ -332,7 +396,10 @@ export default function Settings() {
                 Notifications for new grades and CGPA changes
               </p>
             </div>
-            <Button variant="outline" size="sm">Enable</Button>
+            <Switch
+              checked={preferences.notifications.gradeUpdates}
+              onCheckedChange={(checked) => updateNotificationPreference('gradeUpdates', checked)}
+            />
           </div>
 
           <Separator />
@@ -344,7 +411,25 @@ export default function Settings() {
                 Reminders for upcoming exams and assignments
               </p>
             </div>
-            <Button variant="outline" size="sm">Enable</Button>
+            <Switch
+              checked={preferences.notifications.examReminders}
+              onCheckedChange={(checked) => updateNotificationPreference('examReminders', checked)}
+            />
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Data Health Alerts</p>
+              <p className="text-sm text-muted-foreground">
+                Alerts for missing grades and target gaps
+              </p>
+            </div>
+            <Switch
+              checked={preferences.notifications.dataHealthAlerts}
+              onCheckedChange={(checked) => updateNotificationPreference('dataHealthAlerts', checked)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -377,12 +462,14 @@ export default function Settings() {
             <div>
               <p className="font-medium">Import Data</p>
               <p className="text-sm text-muted-foreground">
-                Import academic data from JSON file
+                Import academic data from a JSON file through the Semesters page
               </p>
             </div>
-            <Button variant="outline">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
+            <Button asChild variant="outline">
+              <Link to="/semesters">
+                <Upload className="w-4 h-4 mr-2" />
+                Open Import
+              </Link>
             </Button>
           </div>
 

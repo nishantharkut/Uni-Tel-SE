@@ -12,6 +12,7 @@ import { useCreateAttendance, useUpdateAttendance, useSemesters } from '@/hooks/
 import { useSubjectsBySemester } from '@/hooks/useSubjects';
 import type { AttendanceRecord } from '@/services/academicService';
 import { useToast } from '@/hooks/use-toast';
+import { buildAttendancePlan, getAttendanceRiskLabel } from '@/domain/attendancePlanning';
 
 interface AttendanceDialogProps {
   open: boolean;
@@ -46,6 +47,17 @@ export function AttendanceDialog({
   // Filter out subjects that already have attendance records (if we have access to records)
   const selectableSubjects = semesterSubjects;
 
+  const resetForm = useCallback(() => {
+    setFormData({
+      subject_name: '',
+      total_classes: 0,
+      attended_classes: 0,
+      note: '',
+      semester_id: semesterId || ''
+    });
+    setUseManualEntry(false);
+  }, [semesterId]);
+
   useEffect(() => {
     if (editingRecord) {
       setFormData({
@@ -60,23 +72,40 @@ export function AttendanceDialog({
     }
   }, [editingRecord, semesterId, resetForm]);
 
-  const resetForm = useCallback(() => {
-    setFormData({
-      subject_name: '',
-      total_classes: 0,
-      attended_classes: 0,
-      note: '',
-      semester_id: semesterId || ''
-    });
-    setUseManualEntry(false);
-  }, [semesterId]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.subject_name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Subject name is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.semester_id) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a semester.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.attended_classes > formData.total_classes) {
+      toast({
+        title: 'Validation Error',
+        description: 'Attended classes cannot exceed total classes.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     // Convert null values to appropriate defaults
     const submitData = {
       ...formData,
+      subject_name: formData.subject_name.trim(),
       total_classes: formData.total_classes || 0,
       attended_classes: formData.attended_classes || 0
     };
@@ -128,8 +157,7 @@ export function AttendanceDialog({
   };
 
   const getAttendancePercentage = () => {
-    if (formData.total_classes === 0) return 0;
-    return Math.round((formData.attended_classes / formData.total_classes) * 100 * 100) / 100;
+    return buildAttendancePlan(formData.attended_classes, formData.total_classes).percentage;
   };
 
   const getPercentageColor = (percentage: number) => {
@@ -322,14 +350,19 @@ export function AttendanceDialog({
           </div>
 
           {formData.total_classes > 0 && (
-            <div className="p-3 bg-muted rounded-lg flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calculator className="w-4 h-4" />
-                <span className="text-sm">Attendance: {getAttendancePercentage()}%</span>
+            <div className="p-3 bg-muted rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-4 h-4" />
+                  <span className="text-sm">Attendance: {getAttendancePercentage()}%</span>
+                </div>
+                <Badge className={getPercentageColor(getAttendancePercentage())}>
+                  {getAttendanceRiskLabel(buildAttendancePlan(formData.attended_classes, formData.total_classes).riskLevel)}
+                </Badge>
               </div>
-              <Badge className={getPercentageColor(getAttendancePercentage())}>
-                {getAttendancePercentage() >= 75 ? 'Good' : getAttendancePercentage() >= 65 ? 'Warning' : 'Critical'}
-              </Badge>
+              <p className="text-xs text-muted-foreground">
+                {buildAttendancePlan(formData.attended_classes, formData.total_classes).message}
+              </p>
             </div>
           )}
 

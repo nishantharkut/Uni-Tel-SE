@@ -21,6 +21,7 @@ import {
 import { useAttendance, useSemesters } from '@/hooks/useAcademic';
 import { LazyActiveAttendanceCard } from '@/components/academic/LazyActiveAttendanceCard';
 import { PageLoader } from '@/components/ui/PageLoader';
+import { buildAttendancePlan } from '@/domain/attendancePlanning';
 
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,11 +40,14 @@ export default function Attendance() {
   const totalRecords = attendance.length;
   const averageAttendance = attendance.length > 0 
     ? Math.round(attendance.reduce((sum, record) => 
-        sum + (record.total_classes > 0 ? (record.attended_classes / record.total_classes * 100) : 0), 0
+        sum + buildAttendancePlan(record.attended_classes, record.total_classes).percentage, 0
       ) / attendance.length)
     : 0;
   const criticalSubjects = attendance.filter(record => 
-    record.total_classes > 0 && (record.attended_classes / record.total_classes * 100) < 75
+    buildAttendancePlan(record.attended_classes, record.total_classes).riskLevel === 'critical'
+  ).length;
+  const watchSubjects = attendance.filter(record =>
+    buildAttendancePlan(record.attended_classes, record.total_classes).riskLevel === 'watch'
   ).length;
 
   if (isLoading) {
@@ -101,6 +105,12 @@ export default function Attendance() {
                         <Badge className="color-danger border-0 px-4 py-2 text-sm font-semibold">
                           <AlertTriangle className="w-4 h-4 mr-2" />
                           {criticalSubjects} Critical
+                        </Badge>
+                      )}
+                      {watchSubjects > 0 && (
+                        <Badge className="color-warning border-0 px-4 py-2 text-sm font-semibold">
+                          <Clock className="w-4 h-4 mr-2" />
+                          {watchSubjects} Watch
                         </Badge>
                       )}
                     </div>

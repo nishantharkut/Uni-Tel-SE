@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Edit, Plus, Trash2, GraduationCap } from 'lucide-react';
 import { useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject, useSemesters } from '@/hooks/useAcademic';
-import { gradeToPoints, getGradeColor, computeSGPA } from '@/utils/gradeCalculations';
+import { gradeToPoints, getGradeColor, computeSGPA, getValidGrades } from '@/utils/gradeCalculations';
 import type { Subject } from '@/services/academicService';
 import { SkeletonList } from '@/components/ui/skeleton';
 
-const GRADES = ['A', 'A-', 'B', 'B-', 'C', 'C-', 'D', 'E', 'F', 'I'];
+const GRADES = getValidGrades();
 
 interface GradeEditorProps {
   semesterId?: string;
@@ -243,7 +243,7 @@ export function GradeEditor({ semesterId }: GradeEditorProps) {
             <p>No subjects added yet</p>
           </div>
         ) : (
-          filteredSubjects.map((subject: { id: string; name: string; credits: number; grade?: string; semester_id: string }) => (
+          filteredSubjects.map((subject: Subject) => (
             <div key={subject.id} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-sm transition-shadow">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">

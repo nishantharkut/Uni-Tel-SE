@@ -43,7 +43,7 @@ export function DashboardStats() {
       bgColor: 'bg-purple-50'
     },
     {
-      title: 'Credits',
+      title: 'Tracked Credits',
       value: summary?.total_credits?.toString() || '0',
       icon: Award,
       color: 'text-orange-600',

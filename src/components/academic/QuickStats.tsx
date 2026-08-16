@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, BookOpen, Calendar, Target, Award, Zap } from 'lucide-react';
+import { BookOpen, Calendar, Target, Award, Zap } from 'lucide-react';
 import type { Semester, Subject, AttendanceRecord, MarksRecord } from '@/services/academicService';
-import { computeCGPA } from '@/utils/gradeCalculations';
+import { calculateEarnedCredits } from '@/domain/academicRules';
 
 interface QuickStatsProps {
   semesters: Semester[];
@@ -21,7 +21,7 @@ export function QuickStats({
   // Calculate quick stats
   const totalSubjects = subjects.length;
   const gradedSubjects = subjects.filter(s => s.grade).length;
-  const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
+  const earnedCredits = calculateEarnedCredits(subjects);
   const totalSemesters = semesters.length;
   
   const validAttendance = attendance.filter(att => att.total_classes > 0);
@@ -42,7 +42,7 @@ export function QuickStats({
 
   const excellentGrades = subjects.filter(s => {
     const grade = s.grade;
-    return grade && ['S', 'A+', 'A'].includes(grade);
+    return grade && ['A', 'A-'].includes(grade);
   }).length;
 
   const stats = [
@@ -55,8 +55,8 @@ export function QuickStats({
       subLabel: `${gradedSubjects} graded`
     },
     {
-      label: 'Total Credits',
-      value: totalCredits,
+      label: 'Earned Credits',
+      value: earnedCredits,
       icon: Award,
       color: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 dark:bg-purple-950/30',
