@@ -32,7 +32,7 @@ export default function Landing() {
           const { data } = await supabase
             .from('profiles')
             .select('full_name, email')
-            .eq('id', user.id)
+            .eq('user_id', user.id)
             .single();
           
           if (data) {

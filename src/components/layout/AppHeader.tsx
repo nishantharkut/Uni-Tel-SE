@@ -1,9 +1,11 @@
 
 import { useState } from "react"
 import { Bell, Search, User, LogOut, Menu, X } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { MobileSearchModal } from "@/components/ui/MobileSearchModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NotificationsDropdown } from "@/components/ui/notifications-dropdown"
+import { useAcademicSearch, type AcademicSearchResult } from "@/hooks/useAcademicSearch"
 
 interface AppHeaderProps {
   user?: {
@@ -28,6 +31,17 @@ interface AppHeaderProps {
 
 export function AppHeader({ user, onSignOut, onMobileMenuToggle, mobileMenuOpen }: AppHeaderProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const navigate = useNavigate();
+  const { results: searchResults, saveRecentSearch } = useAcademicSearch(searchTerm);
+
+  const handleSearchResult = (result: AcademicSearchResult) => {
+    saveRecentSearch(searchTerm || result.title);
+    setSearchTerm("");
+    setSearchFocused(false);
+    navigate(result.route);
+  };
 
   const getInitials = (name?: string) => {
     if (!name) return "U"
@@ -73,9 +87,48 @@ export function AppHeader({ user, onSignOut, onMobileMenuToggle, mobileMenuOpen 
           <div className="relative w-full group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-academic-primary transition-colors duration-200" />
             <Input
-              placeholder="Search notes, papers, subjects..."
+              placeholder="Search subjects, marks, attendance..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && searchResults[0]) {
+                  event.preventDefault();
+                  handleSearchResult(searchResults[0]);
+                }
+              }}
               className="pl-11 pr-4 bg-muted/40 border-muted-foreground/30 focus:bg-background focus:border-academic-primary/50 focus:ring-2 focus:ring-academic-primary/20 transition-all duration-300 rounded-xl h-11 shadow-sm hover:shadow-md"
             />
+            {searchFocused && (
+              <div className="absolute left-0 right-0 top-12 z-50 rounded-xl border bg-background shadow-xl">
+                <div className="max-h-96 overflow-y-auto p-2">
+                  {searchResults.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No matching academic records found.
+                    </div>
+                  ) : (
+                    searchResults.slice(0, 8).map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className="w-full rounded-lg p-3 text-left transition-colors hover:bg-muted"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          handleSearchResult(result);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-medium">{result.title}</span>
+                          <Badge variant="outline" className="capitalize">{result.category}</Badge>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{result.description}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -42,6 +42,21 @@ export interface ImportResult {
 
 type ExportSemesterRow = NonNullable<ImportData['semesters']>[number];
 
+export interface ImportPreview {
+  semesters: number;
+  subjects: number;
+  attendance: number;
+  marks: number;
+  warnings: string[];
+}
+
+export interface ParseImportResult {
+  success: boolean;
+  data?: ImportData;
+  preview?: ImportPreview;
+  message?: string;
+}
+
 function normaliseSemesterNumber(val: unknown): number {
   const parsed = parseInt(String(val).trim(), 10);
   if (isNaN(parsed)) return -1;
@@ -98,7 +113,90 @@ function normaliseImportData(data: ImportData): ImportData {
   };
 }
 
+function buildImportPreview(data: ImportData): ImportPreview {
+  const semesters = data.semesters ?? [];
+  const warnings: string[] = [];
+
+  semesters.forEach((semester, index) => {
+    if (normaliseSemesterNumber(semester.number) < 1) {
+      warnings.push(`Semester at position ${index + 1} has an invalid semester number.`);
+    }
+
+    (semester.attendance ?? []).forEach((record) => {
+      if (record.attended_classes > record.total_classes) {
+        warnings.push(`${record.subject_name} attendance has attended classes greater than total classes.`);
+      }
+    });
+
+    (semester.marks ?? []).forEach((record) => {
+      if (record.total_marks < 0 || record.obtained_marks < 0 || record.obtained_marks > record.total_marks) {
+        warnings.push(`${record.subject_name} ${record.exam_type} has invalid marks.`);
+      }
+    });
+  });
+
+  return {
+    semesters: semesters.length,
+    subjects: semesters.reduce((total, semester) => total + (semester.subjects?.length ?? 0), 0),
+    attendance: semesters.reduce((total, semester) => total + (semester.attendance?.length ?? 0), 0),
+    marks: semesters.reduce((total, semester) => total + (semester.marks?.length ?? 0), 0),
+    warnings,
+  };
+}
+
+function describeJsonParseError(error: unknown): string {
+  if (error instanceof SyntaxError) {
+    return `Invalid JSON syntax: ${error.message}. Check brackets, commas, quotes, and trailing commas.`;
+  }
+
+  return error instanceof Error ? error.message : 'Invalid import data.';
+}
+
+function isImportData(value: unknown): value is ImportData {
+  return Boolean(value && typeof value === 'object' && Array.isArray((value as ImportData).semesters));
+}
+
 export const jsonImportService = {
+  parseJson(rawJson: string): ParseImportResult {
+    if (!rawJson.trim()) {
+      return {
+        success: false,
+        message: 'Paste a JSON export before importing.',
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(rawJson);
+      if (!isImportData(parsed)) {
+        return {
+          success: false,
+          message: 'Import JSON must contain a top-level "semesters" array.',
+        };
+      }
+
+      const normalisedData = normaliseImportData(parsed);
+      return {
+        success: true,
+        data: normalisedData,
+        preview: buildImportPreview(normalisedData),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: describeJsonParseError(error),
+      };
+    }
+  },
+
+  isEmptyExport(data: ImportData | null): boolean {
+    if (!data?.semesters?.length) return true;
+    return data.semesters.every((semester) =>
+      !semester.subjects?.length
+      && !semester.attendance?.length
+      && !semester.marks?.length
+    );
+  },
+
   async importData(data: ImportData): Promise<ImportResult> {
     try {
       const normalisedData = normaliseImportData(data);

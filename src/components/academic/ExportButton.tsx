@@ -21,6 +21,15 @@ export function ExportButton() {
 
   const handleExportPDF = () => {
     try {
+      if (!hasData) {
+        toast({
+          title: 'Nothing to export',
+          description: 'Add semesters, subjects, attendance, or marks before exporting a transcript.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       exportToPDF(
         semesters,
         subjects,
@@ -43,6 +52,15 @@ export function ExportButton() {
 
   const handleExportExcel = () => {
     try {
+      if (!hasData) {
+        toast({
+          title: 'Nothing to export',
+          description: 'Add semesters, subjects, attendance, or marks before exporting academic data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       exportToExcel(
         semesters,
         subjects,
@@ -77,7 +95,6 @@ export function ExportButton() {
       <DropdownMenuContent align="end" className="w-40 sm:w-48">
         <DropdownMenuItem 
           onClick={handleExportPDF}
-          disabled={!hasData}
           className="gap-2"
         >
           <FileText className="w-4 h-4" />
@@ -85,7 +102,6 @@ export function ExportButton() {
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={handleExportExcel}
-          disabled={!hasData}
           className="gap-2"
         >
           <FileSpreadsheet className="w-4 h-4" />

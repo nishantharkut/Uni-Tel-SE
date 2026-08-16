@@ -18,8 +18,9 @@ import {
   BookOpen,
   BarChart3
 } from 'lucide-react';
-import { useMarks, useSemesters } from '@/hooks/useAcademic';
+import { useAcademicSummary, useMarks, useSemesters, useSubjects } from '@/hooks/useAcademic';
 import { LazyMarksEditor } from '@/components/academic/LazyMarksEditor';
+import { StudentPlanningPanel } from '@/components/academic/StudentPlanningPanel';
 import { PageLoader } from '@/components/ui/PageLoader';
 
 export default function Marks() {
@@ -29,6 +30,8 @@ export default function Marks() {
 
   const { data: marks = [], isLoading } = useMarks();
   const { data: semesters = [] } = useSemesters();
+  const { data: subjects = [] } = useSubjects();
+  const { data: summary } = useAcademicSummary();
 
   const filteredMarks = marks.filter(record => {
     const matchesSearch = record.subject_name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -210,6 +213,13 @@ export default function Marks() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Enhanced Filters */}
+        <StudentPlanningPanel
+          subjects={subjects}
+          marks={marks}
+          currentCGPA={summary?.cgpa || null}
+        />
 
         {/* Enhanced Filters */}
         <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
