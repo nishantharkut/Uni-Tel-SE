@@ -83,8 +83,8 @@ export interface AcademicSummary {
   total_semesters: number;
   total_subjects: number;
   total_credits: number;
-  average_sgpa?: number;
-  cgpa?: number;
+  average_sgpa?: number | null;
+  cgpa?: number | null;
   backlogs: number;
 }
 

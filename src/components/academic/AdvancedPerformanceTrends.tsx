@@ -11,6 +11,22 @@ interface AdvancedPerformanceTrendsProps {
   targetCGPA?: number;
 }
 
+interface TrendChartPayload {
+  semester?: string;
+  isPrediction?: boolean;
+}
+
+interface TrendTooltipProps {
+  payload?: TrendChartPayload;
+}
+
+interface TrendDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  payload?: TrendChartPayload;
+}
+
 export function AdvancedPerformanceTrends({ 
   showPrediction = true, 
   targetCGPA 
@@ -164,8 +180,8 @@ export function AdvancedPerformanceTrends({
                     borderRadius: '8px',
                     fontSize: '12px'
                   }}
-                  formatter={(value: number, name: string, props: any) => {
-                    if (props.payload.isPrediction) {
+                  formatter={(value: number, name: string, props: TrendTooltipProps) => {
+                    if (props.payload?.isPrediction) {
                       return [`${value.toFixed(2)} (Predicted)`, name];
                     }
                     return [value.toFixed(2), name];
@@ -186,11 +202,12 @@ export function AdvancedPerformanceTrends({
                   stroke="hsl(var(--academic-primary))" 
                   strokeWidth={3}
                   name="CGPA"
-                  dot={(props: any) => {
-                    if (props.payload.isPrediction) {
-                      return <circle cx={props.cx} cy={props.cy} r={5} fill="hsl(var(--academic-accent))" stroke="hsl(var(--academic-accent))" strokeWidth={2} />;
+                  dot={(props: TrendDotProps) => {
+                    const dotKey = `cgpa-dot-${props.index ?? props.payload?.semester ?? props.cx}-${props.payload?.isPrediction ? 'prediction' : 'actual'}`;
+                    if (props.payload?.isPrediction) {
+                      return <circle key={dotKey} cx={props.cx} cy={props.cy} r={5} fill="hsl(var(--academic-accent))" stroke="hsl(var(--academic-accent))" strokeWidth={2} />;
                     }
-                    return <circle cx={props.cx} cy={props.cy} r={4} fill="hsl(var(--academic-primary))" strokeWidth={2} />;
+                    return <circle key={dotKey} cx={props.cx} cy={props.cy} r={4} fill="hsl(var(--academic-primary))" strokeWidth={2} />;
                   }}
                   strokeDasharray={prediction ? undefined : undefined}
                 />

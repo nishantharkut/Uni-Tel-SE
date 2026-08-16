@@ -121,11 +121,15 @@ export function buildAcademicNotifications({
       });
     }
 
-    if (summary?.cgpa !== undefined && summary.cgpa < preferences.cgpaTarget) {
+    const currentCgpa = typeof summary?.cgpa === 'number' && Number.isFinite(summary.cgpa)
+      ? summary.cgpa
+      : null;
+
+    if (currentCgpa !== null && currentCgpa < preferences.cgpaTarget) {
       notifications.push({
         id: 'academic-cgpa-target-gap',
         title: 'CGPA target gap',
-        message: `Current CGPA is ${summary.cgpa.toFixed(2)} against your ${preferences.cgpaTarget.toFixed(2)} target.`,
+        message: `Current CGPA is ${currentCgpa.toFixed(2)} against your ${preferences.cgpaTarget.toFixed(2)} target.`,
         type: 'info',
         action_url: '/analytics',
         action_text: 'Open planner',
