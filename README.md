@@ -1,20 +1,20 @@
-<p align="center">
-  <img src="public/logo.png" alt="UNI-TEL logo" width="320">
-</p>
+<img align="right" src="public/logo.png" alt="UNI-TEL logo" width="140">
 
-<h1 align="center">UNI-TEL</h1>
+<h1>UNI-TEL</h1>
 
-<p align="center">
+<p>
   Student academic record management and performance analytics in one web application.
 </p>
 
-<p align="center">
+<p>
   <a href="https://react.dev/"><img alt="React 18" src="https://img.shields.io/badge/React-18.3-20232A?logo=react&logoColor=61DAFB"></a>
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript 5" src="https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white"></a>
   <a href="https://vite.dev/"><img alt="Vite 5" src="https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white"></a>
   <a href="https://supabase.com/"><img alt="Supabase" src="https://img.shields.io/badge/Supabase-2.56-3FCF8E?logo=supabase&logoColor=white"></a>
   <a href="https://tailwindcss.com/"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white"></a>
 </p>
+
+<br clear="right">
 
 ## Overview
 
