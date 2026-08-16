@@ -29,6 +29,7 @@ import { ExportButton } from '@/components/academic/ExportButton';
 import { AnalyticsInsights } from '@/components/academic/AnalyticsInsights';
 import { QuickStats } from '@/components/academic/QuickStats';
 import { SemesterComparison } from '@/components/academic/SemesterComparison';
+import { StudentPlanningPanel } from '@/components/academic/StudentPlanningPanel';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -255,6 +256,12 @@ export default function Analytics() {
           semesters={semesters}
           subjects={subjects}
           attendance={attendance}
+          marks={marks}
+          currentCGPA={summary?.cgpa || null}
+        />
+
+        <StudentPlanningPanel
+          subjects={subjects}
           marks={marks}
           currentCGPA={summary?.cgpa || null}
         />
