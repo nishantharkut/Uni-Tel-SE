@@ -183,14 +183,14 @@ export function AnalyticsPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Total Credits</CardTitle>
+          <CardTitle>Tracked Credits</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-center">
             {academicSummary?.total_credits || 0}
           </div>
           <p className="text-sm text-muted-foreground text-center mt-2">
-            Credits Completed
+            Credits Recorded
           </p>
         </CardContent>
       </Card>

@@ -229,20 +229,19 @@ export default function Index() {
                   <div className="text-3xl sm:text-4xl font-bold text-academic-secondary">
                     {summary?.total_credits || 0}
                   </div>
-                  <p className="text-sm font-medium text-academic-secondary/80">Credits</p>
+                  <p className="text-sm font-medium text-academic-secondary/80">Tracked Credits</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-academic-secondary/70">Credit Progress</span>
+                  <span className="text-academic-secondary/70">Programme target</span>
                   <span className="font-semibold text-academic-secondary">
-                    {summary?.total_credits ? Math.min((summary.total_credits / 160) * 100, 100) : 0}%
+                    Varies
                   </span>
                 </div>
-                <Progress 
-                  value={summary?.total_credits ? Math.min((summary.total_credits / 160) * 100, 100) : 0} 
-                  className="h-2 bg-academic-warning/30"
-                />
+                <p className="text-xs text-academic-secondary/70">
+                  IIITM credit requirements differ by programme.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -464,8 +463,8 @@ export default function Index() {
                          <Award className="w-4 h-4 text-academic-secondary" />
                        </div>
                        <div className="flex-1">
-                         <p className="text-sm font-medium text-academic-secondary">Credit Progress</p>
-                         <p className="text-xs text-academic-secondary/80">{summary.total_credits} credits earned</p>
+                         <p className="text-sm font-medium text-academic-secondary">Tracked Credits</p>
+                         <p className="text-xs text-academic-secondary/80">{summary.total_credits} credits recorded</p>
                        </div>
                      </div>
                    </CardContent>

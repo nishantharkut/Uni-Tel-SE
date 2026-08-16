@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { TrendingUp, Target, Sparkles } from 'lucide-react';
 import { useSemesters, useSubjects } from '@/hooks/useAcademic';
 import { computeCGPA } from '@/utils/gradeCalculations';
+import { calculateEarnedCredits } from '@/domain/academicRules';
 import { cn } from '@/lib/utils';
 
 interface AdvancedPerformanceTrendsProps {
@@ -25,12 +26,13 @@ export function AdvancedPerformanceTrends({
       const semestersUpToNow = semesters.slice(0, index + 1);
       const semesterIds = semestersUpToNow.map(s => s.id);
       const subjectsUpToNow = subjects.filter(sub => semesterIds.includes(sub.semester_id));
+      const semesterSubjects = subjects.filter(sub => sub.semester_id === semester.id);
       
       return {
         semester: `Sem ${semester.number}`,
         sgpa: semester.sgpa || 0,
         cgpa: computeCGPA(subjectsUpToNow),
-        credits: semester.total_credits || 0
+        credits: calculateEarnedCredits(semesterSubjects)
       };
     })
     .sort((a, b) => parseInt(a.semester.split(' ')[1]) - parseInt(b.semester.split(' ')[1]));

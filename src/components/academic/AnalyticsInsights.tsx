@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Target, Award, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Semester, Subject, AttendanceRecord, MarksRecord } from '@/services/academicService';
-import { computeCGPA } from '@/utils/gradeCalculations';
+import { isPassingGrade } from '@/domain/academicRules';
 
 interface AnalyticsInsightsProps {
   semesters: Semester[];
@@ -103,7 +103,7 @@ export function AnalyticsInsights({
   if (gradedSubjects.length > 0) {
     const excellentGrades = gradedSubjects.filter(s => {
       const grade = s.grade!;
-      return ['S', 'A+', 'A'].includes(grade);
+      return ['A', 'A-'].includes(grade);
     }).length;
     const excellentPercentage = (excellentGrades / gradedSubjects.length) * 100;
 
@@ -112,14 +112,13 @@ export function AnalyticsInsights({
         type: 'achievement',
         icon: <Sparkles className="w-4 h-4" />,
         title: 'Excellent Grades',
-        description: `${Math.round(excellentPercentage)}% of your subjects have excellent grades (A or above).`,
+        description: `${Math.round(excellentPercentage)}% of your subjects have excellent grades (A or A-).`,
         badge: 'Outstanding'
       });
     }
 
     const backlogs = gradedSubjects.filter(s => {
-      const grade = s.grade!;
-      return ['D', 'F', 'I'].includes(grade);
+      return !isPassingGrade(s.grade);
     }).length;
 
     if (backlogs === 0 && gradedSubjects.length >= 3) {

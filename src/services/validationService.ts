@@ -1,4 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
+import {
+  isGpaGrade,
+  getWeightageLimit,
+  validateExamType as isValidExamType,
+  validateMarks as areValidMarks,
+  validateAssessmentWeightage as isValidAssessmentWeightage,
+  validateWeightage as isWeightageInRange,
+} from '@/domain/academicRules';
 
 export interface DataValidationIssue {
   table_name: string;
@@ -16,18 +24,16 @@ export interface CleanupResult {
 export const validationService = {
   // Validate academic data consistency
   async validateDataConsistency(): Promise<DataValidationIssue[]> {
-    const { data, error } = await supabase
-      .rpc('validate_academic_data_consistency');
+    const { data, error } = await (supabase.rpc as any)('validate_academic_data_consistency');
     if (error) throw error;
-    return data || [];
+    return (data || []) as DataValidationIssue[];
   },
 
   // Clean up orphaned data
   async cleanupOrphanedData(): Promise<CleanupResult[]> {
-    const { data, error } = await supabase
-      .rpc('cleanup_orphaned_academic_data');
+    const { data, error } = await (supabase.rpc as any)('cleanup_orphaned_academic_data');
     if (error) throw error;
-    return data || [];
+    return (data || []) as CleanupResult[];
   },
 
   // Validate email format
@@ -38,17 +44,12 @@ export const validationService = {
 
   // Validate grade letter
   validateGrade(grade: string): boolean {
-    const validGrades = ['A', 'A-', 'B', 'B-', 'C', 'C-', 'D', 'E', 'F', 'I'];
-    return validGrades.includes(grade);
+    return isGpaGrade(grade);
   },
 
   // Validate exam type
   validateExamType(examType: string): boolean {
-    const validTypes = [
-      'Quiz', 'Mid Term', 'End Term', 'Assignment', 'Lab Exam', 
-      'Viva', 'Project', 'Presentation', 'Practical', 'Other'
-    ];
-    return validTypes.includes(examType);
+    return isValidExamType(examType);
   },
 
   // Validate semester number
@@ -73,7 +74,14 @@ export const validationService = {
 
   // Validate marks
   validateMarks(obtained: number, total: number): boolean {
-    return total > 0 && obtained >= 0 && obtained <= total;
+    return areValidMarks(obtained, total);
+  },
+
+  // Validate exam weightage
+  validateWeightage(weightage: number, examType?: string): boolean {
+    return examType
+      ? isValidAssessmentWeightage(examType, weightage)
+      : isWeightageInRange(weightage);
   },
 
   // Validate attendance
@@ -141,7 +149,7 @@ export const validationService = {
     }
 
     if (data.grade && !this.validateGrade(data.grade)) {
-      errors.push('Invalid grade letter');
+      errors.push('Grade must be one of A, A-, B, B-, C, C-, D, or F');
     }
 
     if (!data.semester_id) {
@@ -195,6 +203,7 @@ export const validationService = {
     exam_type: string;
     total_marks: number;
     obtained_marks: number;
+    weightage?: number;
     semester_id: string;
   }): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -204,19 +213,15 @@ export const validationService = {
     }
 
     if (!this.validateExamType(data.exam_type)) {
-      errors.push('Invalid exam type');
+      errors.push('Exam type must be 2-100 characters');
     }
 
     if (!this.validateMarks(data.obtained_marks, data.total_marks)) {
-      errors.push('Obtained marks cannot exceed total marks');
+      errors.push('Marks must be non-negative and obtained marks cannot exceed total marks');
     }
 
-    if (data.total_marks <= 0) {
-      errors.push('Total marks must be greater than 0');
-    }
-
-    if (data.obtained_marks < 0) {
-      errors.push('Obtained marks cannot be negative');
+    if (data.weightage !== undefined && !this.validateWeightage(data.weightage, data.exam_type)) {
+      errors.push(`Weightage cannot exceed ${getWeightageLimit(data.exam_type)}% for this assessment type`);
     }
 
     if (!data.semester_id) {

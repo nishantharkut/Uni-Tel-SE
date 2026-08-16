@@ -3,16 +3,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Award, TrendingUp } from 'lucide-react';
 import { useSubjects } from '@/hooks/useAcademic';
 import { getGradeColor } from '@/utils/gradeCalculations';
+import { GPA_GRADES, isGpaGrade } from '@/domain/academicRules';
 
 export function GradeDistributionHistogram() {
   const { data: subjects = [] } = useSubjects();
 
-  // Grade order (best to worst)
-  const gradeOrder = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'];
+  const gradeOrder = [...GPA_GRADES];
 
   // Calculate grade distribution
   const gradeDistribution = subjects
-    .filter(sub => sub.grade)
+    .filter(sub => isGpaGrade(sub.grade))
     .reduce((acc, sub) => {
       const grade = sub.grade!;
       acc[grade] = (acc[grade] || 0) + 1;
@@ -24,16 +24,16 @@ export function GradeDistributionHistogram() {
     grade,
     count: gradeDistribution[grade] || 0,
     percentage: subjects.filter(s => s.grade).length > 0
-      ? Math.round(((gradeDistribution[grade] || 0) / subjects.filter(s => s.grade).length) * 100)
+      ? Math.round(((gradeDistribution[grade] || 0) / subjects.filter(s => isGpaGrade(s.grade)).length) * 100)
       : 0
   })).filter(item => item.count > 0 || gradeOrder.indexOf(item.grade) <= 5); // Show at least top grades
 
   // Calculate statistics
-  const totalGraded = subjects.filter(s => s.grade).length;
-  const excellentGrades = ['S', 'A+', 'A'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
-  const goodGrades = ['A-', 'B+', 'B'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
-  const averageGrades = ['B-', 'C+', 'C'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
-  const poorGrades = ['C-', 'D', 'F'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
+  const totalGraded = subjects.filter(s => isGpaGrade(s.grade)).length;
+  const excellentGrades = ['A', 'A-'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
+  const goodGrades = ['B', 'B-'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
+  const averageGrades = ['C', 'C-'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
+  const poorGrades = ['D', 'F'].reduce((sum, grade) => sum + (gradeDistribution[grade] || 0), 0);
 
   const getBarColor = (grade: string) => {
     const color = getGradeColor(grade);
