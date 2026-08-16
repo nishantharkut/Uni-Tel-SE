@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Download, FileText, HelpCircle } from 'lucide-react';
-import { jsonImportService, type ImportData } from '@/services/jsonImportService';
+import { Badge } from '@/components/ui/badge';
+import { Upload, Download, FileText, HelpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import { jsonImportService, type ImportPreview } from '@/services/jsonImportService';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { JsonImportGuide } from './JsonImportGuide';
@@ -16,6 +17,8 @@ export function ImportExport() {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportData, setExportData] = useState<string>('');
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -23,8 +26,18 @@ export function ImportExport() {
   const handleImport = async () => {
     setIsImporting(true);
     try {
-      const data: ImportData = JSON.parse(jsonData);
-      const result = await jsonImportService.importData(data);
+      const parsed = jsonImportService.parseJson(jsonData);
+      if (!parsed.success || !parsed.data) {
+        setImportError(parsed.message || 'Import data could not be parsed.');
+        toast({
+          title: 'Import Error',
+          description: parsed.message || 'Import data could not be parsed.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const result = await jsonImportService.importData(parsed.data);
       
       if (result.success) {
         toast({
@@ -34,6 +47,8 @@ export function ImportExport() {
         
         queryClient.invalidateQueries();
         setJsonData('');
+        setImportPreview(null);
+        setImportError(null);
         setIsDialogOpen(false);
       } else {
         toast({
@@ -45,12 +60,32 @@ export function ImportExport() {
     } catch (error) {
       toast({
         title: 'Import Error',
-        description: 'Invalid JSON format or import failed',
+        description: error instanceof Error ? error.message : 'Invalid JSON format or import failed',
         variant: 'destructive'
       });
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleJsonChange = (value: string) => {
+    setJsonData(value);
+
+    if (!value.trim()) {
+      setImportPreview(null);
+      setImportError(null);
+      return;
+    }
+
+    const parsed = jsonImportService.parseJson(value);
+    if (!parsed.success) {
+      setImportPreview(null);
+      setImportError(parsed.message || 'Invalid import data.');
+      return;
+    }
+
+    setImportPreview(parsed.preview || null);
+    setImportError(null);
   };
 
   const handleExport = async () => {
@@ -60,8 +95,10 @@ export function ImportExport() {
       if (data) {
         setExportData(JSON.stringify(data, null, 2));
         toast({
-          title: 'Export Successful',
-          description: 'Academic data exported successfully'
+          title: jsonImportService.isEmptyExport(data) ? 'Export generated with no records' : 'Export Successful',
+          description: jsonImportService.isEmptyExport(data)
+            ? 'The export is valid JSON, but your academic profile does not contain records yet.'
+            : 'Academic data exported successfully'
         });
       } else {
         toast({
@@ -137,16 +174,45 @@ export function ImportExport() {
               <Textarea
                 placeholder="Paste your academic data JSON here..."
                 value={jsonData}
-                onChange={(e) => setJsonData(e.target.value)}
+                onChange={(e) => handleJsonChange(e.target.value)}
                 rows={15}
                 className="font-mono text-sm"
               />
             </div>
+
+            {importError && (
+              <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <span>{importError}</span>
+              </div>
+            )}
+
+            {importPreview && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-academic-success" />
+                  <p className="font-medium">Import preview</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">{importPreview.semesters} semesters</Badge>
+                  <Badge variant="outline">{importPreview.subjects} subjects</Badge>
+                  <Badge variant="outline">{importPreview.attendance} attendance records</Badge>
+                  <Badge variant="outline">{importPreview.marks} marks records</Badge>
+                </div>
+                {importPreview.warnings.length > 0 && (
+                  <div className="space-y-1 text-sm text-yellow-700 dark:text-yellow-400">
+                    {importPreview.warnings.slice(0, 4).map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className="flex justify-end space-x-2">
               <Button
                 onClick={handleImport}
-                disabled={!jsonData.trim() || isImporting}
+                disabled={!jsonData.trim() || Boolean(importError) || isImporting}
               >
                 <Upload className="w-4 h-4 mr-2" />
                 {isImporting ? 'Importing...' : 'Import Data'}

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { UserPreferences } from '@/services/userPreferencesService';
+import { Link } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -461,12 +462,14 @@ export default function Settings() {
             <div>
               <p className="font-medium">Import Data</p>
               <p className="text-sm text-muted-foreground">
-                Import academic data from JSON file
+                Import academic data from a JSON file through the Semesters page
               </p>
             </div>
-            <Button variant="outline">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
+            <Button asChild variant="outline">
+              <Link to="/semesters">
+                <Upload className="w-4 h-4 mr-2" />
+                Open Import
+              </Link>
             </Button>
           </div>
 
