@@ -94,13 +94,13 @@ These names match the variables consumed by `src/integrations/supabase/client.ts
 
 Fresh Supabase setup is documented in [docs/database/supabase-setup.md](docs/database/supabase-setup.md).
 
-The database source of truth is one baseline migration:
+Apply the complete migration chain with Supabase CLI:
 
-```text
-supabase/migrations/20260817000000_initial_schema.sql
+```bash
+supabase db push --linked
 ```
 
-It creates the profile, academic, notification, and preference tables; RLS policies; triggers; calculation functions; validation RPCs; and compatibility views required by the app. The old imported patch migrations were intentionally removed because this branch targets a new Supabase project with no live migration history.
+The initial migration creates the profile, academic, notification, and preference tables; RLS policies; triggers; calculation functions; validation RPCs; and compatibility views required by the app. Follow-up migrations keep the deployed project aligned with Supabase security and performance advisors. The old imported patch migrations were intentionally removed because this branch targets a new Supabase project with no live migration history.
 
 ### Run locally
 
@@ -162,7 +162,7 @@ The master plan covers lifecycle selection, team roles, governance, requirements
 | Static analysis | ESLint is configured; the imported baseline currently reports 58 errors and 7 warnings |
 | Automated tests | No automated test suite or `test` script is currently configured |
 | Continuous integration | No GitHub Actions workflow is currently present |
-| Database bootstrap | Clean fresh-project baseline exists at `supabase/migrations/20260817000000_initial_schema.sql`; apply it with `supabase db push` or the SQL Editor and run the verification SQL in `docs/database/supabase-setup.md` |
+| Database bootstrap | Fresh-project migrations live in `supabase/migrations/`; apply them with `supabase db push --linked` or run them in filename order in the SQL Editor, then run the verification SQL in `docs/database/supabase-setup.md` |
 
 These entries describe the imported baseline honestly and identify the quality work that remains for the Software Engineering project.
 

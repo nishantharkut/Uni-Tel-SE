@@ -59,4 +59,4 @@ The current implementation validates a single marks record against these caps. F
 
 ## Database Contract Status
 
-The frontend, import edge function, and fresh Supabase baseline now share the same rule intent. The authoritative schema is `supabase/migrations/20260817000000_initial_schema.sql`; generated Supabase types should be regenerated from the new project after the baseline is applied.
+The frontend, import edge function, and Supabase migrations now share the same rule intent. The authoritative schema starts at `supabase/migrations/20260817000000_initial_schema.sql`; apply every migration in filename order and regenerate Supabase types from the linked project afterward.

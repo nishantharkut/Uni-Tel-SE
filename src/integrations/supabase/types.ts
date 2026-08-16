@@ -7,8 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -348,7 +350,15 @@ export type Database = {
           weighted_average: number | null
           worst_performance: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marks_records_semester_owner_fkey"
+            columns: ["semester_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "semesters"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
       }
       user_custom_exam_types: {
         Row: {
@@ -374,11 +384,11 @@ export type Database = {
     }
     Functions: {
       assessment_weightage_limit: {
-        Args: { exam_type: string | null }
-        Returns: number
+        Args: { exam_type: string }
+        Returns: number | null
       }
       cleanup_orphaned_academic_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cleaned_table: string
           records_deleted: number
@@ -389,15 +399,16 @@ export type Database = {
         Returns: number | null
       }
       get_subject_weighted_average: {
-        Args: { p_semester_id: string; p_subject_name: string; p_user_id: string }
-        Returns: number | null
-      }
-      get_unread_notification_count: {
-        Args: Record<PropertyKey, never>
+        Args: {
+          p_semester_id: string
+          p_subject_name: string
+          p_user_id: string
+        }
         Returns: number
       }
+      get_unread_notification_count: { Args: never; Returns: number }
       get_user_academic_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           average_sgpa: number | null
           backlogs: number
@@ -408,32 +419,17 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_cgpa: {
-        Args: { target_user_id: string }
-        Returns: number | null
-      }
-      grade_to_points: {
-        Args: { grade_letter: string | null }
-        Returns: number | null
-      }
-      is_gpa_grade: {
-        Args: { letter: string | null }
-        Returns: boolean
-      }
-      mark_all_notifications_read: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      normalize_grade: {
-        Args: { grade_letter: string | null }
-        Returns: string | null
-      }
+      get_user_cgpa: { Args: { target_user_id: string }; Returns: number | null }
+      grade_to_points: { Args: { grade_letter: string }; Returns: number | null }
+      is_gpa_grade: { Args: { letter: string }; Returns: boolean }
+      mark_all_notifications_read: { Args: never; Returns: number }
+      normalize_grade: { Args: { grade_letter: string }; Returns: string | null }
       recalculate_semester_sgpa_for: {
         Args: { sem_id: string; usr_id: string }
         Returns: undefined
       }
       validate_academic_data_consistency: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           issue_description: string
           issue_type: string
@@ -442,13 +438,10 @@ export type Database = {
         }[]
       }
       validate_assessment_weightage: {
-        Args: { exam_type: string | null; weightage: number | null }
+        Args: { exam_type: string; weightage: number }
         Returns: boolean
       }
-      validate_grade_letter: {
-        Args: { letter: string | null }
-        Returns: boolean
-      }
+      validate_grade_letter: { Args: { letter: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -575,3 +568,9 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

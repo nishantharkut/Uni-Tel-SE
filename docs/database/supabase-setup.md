@@ -1,8 +1,8 @@
 # Fresh Supabase Setup
 
-This guide sets up UNI-TEL on a new Supabase project. The authoritative database source is:
+This guide sets up UNI-TEL on a new Supabase project. The authoritative database source is the ordered migration chain in:
 
-`supabase/migrations/20260817000000_initial_schema.sql`
+`supabase/migrations/`
 
 The old imported SQL snapshots were removed because this repository now targets a fresh project bootstrap, not migration continuity from a live database.
 
@@ -33,14 +33,14 @@ Use the browser-safe anonymous/publishable key only. Do not put a service-role k
 Preferred CLI path:
 
 ```powershell
-supabase db push
+supabase db push --linked
 ```
 
 Manual dashboard path:
 
 1. Open Supabase SQL Editor.
-2. Paste the full contents of `supabase/migrations/20260817000000_initial_schema.sql`.
-3. Run the script once against the empty project database.
+2. Run each SQL file in `supabase/migrations/` in filename order.
+3. Do not skip the follow-up security and performance hardening migrations.
 
 Do not also run the deleted legacy migration files. They are intentionally no longer part of the project.
 
@@ -57,8 +57,15 @@ The function uses the Supabase service-role key from the Supabase Edge Function 
 The repository includes a manually aligned type contract so the app compiles before a live project exists. After applying the schema to your actual Supabase project, regenerate types:
 
 ```powershell
-supabase gen types --lang typescript --linked --schema public > src/integrations/supabase/types.ts
+$types = supabase gen types --lang typescript --linked --schema public
+[System.IO.File]::WriteAllText(
+  (Resolve-Path "src/integrations/supabase/types.ts"),
+  ($types -join [Environment]::NewLine) + [Environment]::NewLine,
+  [System.Text.UTF8Encoding]::new($false)
+)
 ```
+
+PowerShell `>` redirection can write UTF-16 in older shells, which makes Git treat the file as binary. Use the command above on Windows. After regenerating, review the diff before committing; the project intentionally keeps generated database columns non-writable in TypeScript insert/update contracts.
 
 Then run:
 

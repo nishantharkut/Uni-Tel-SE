@@ -30,9 +30,13 @@ Use the fresh database setup guide:
 
 [docs/database/supabase-setup.md](docs/database/supabase-setup.md)
 
-The current baseline migration is:
+Apply all migrations in `supabase/migrations/` with:
 
-`supabase/migrations/20260817000000_initial_schema.sql`
+```powershell
+supabase db push --linked
+```
+
+The first migration is the fresh schema baseline. Follow-up migrations contain security and performance hardening required by Supabase advisors.
 
 ## 4. Run the application
 
