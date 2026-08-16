@@ -41,14 +41,14 @@ const academicItems = [
 ]
 
 const hubItems = [
-  { title: "Browse Hub", url: "/coming-soon", icon: FolderOpen, description: "Explore resources" },
-  { title: "My Uploads", url: "/coming-soon", icon: Upload, description: "Your contributions" },
-  { title: "Bookmarks", url: "/coming-soon", icon: BookmarkCheck, description: "Saved items" },
+  { title: "Browse Hub", url: "/coming-soon?resource=hub", icon: FolderOpen, description: "Resources & scope" },
+  { title: "My Uploads", url: "/coming-soon?resource=uploads", icon: Upload, description: "Planned workflow" },
+  { title: "Bookmarks", url: "/coming-soon?resource=planning", icon: BookmarkCheck, description: "Study planning" },
 ]
 
 const adminItems = [
-  { title: "Moderation", url: "/coming-soon", icon: Shield, description: "Content review" },
-  { title: "Users", url: "/coming-soon", icon: Users, description: "User management" },
+  { title: "Moderation", url: "/coming-soon?resource=admin", icon: Shield, description: "Planned controls" },
+  { title: "Users", url: "/coming-soon?resource=admin", icon: Users, description: "Role planning" },
 ]
 
 const settingsItem = [
