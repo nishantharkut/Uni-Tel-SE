@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Search, X, Clock, TrendingUp, BookOpen, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { Search, X, Clock, TrendingUp, BookOpen, Calendar, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAcademicSearch, type AcademicSearchResult } from '@/hooks/useAcademicSearch';
 
 interface MobileSearchModalProps {
   isOpen: boolean;
@@ -13,32 +15,34 @@ interface MobileSearchModalProps {
 
 export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-
-  // Load recent searches from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('recentSearches');
-    if (saved) {
-      setRecentSearches(JSON.parse(saved));
-    }
-  }, []);
+  const navigate = useNavigate();
+  const { results, recentSearches, saveRecentSearch } = useAcademicSearch(searchTerm);
 
   // Save search to recent searches
   const handleSearch = (term: string) => {
-    if (term.trim()) {
-      const newRecent = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
-      setRecentSearches(newRecent);
-      localStorage.setItem('recentSearches', JSON.stringify(newRecent));
+    const cleanTerm = term.trim();
+    if (!cleanTerm) return;
+
+    saveRecentSearch(cleanTerm);
+    const firstResult = results[0];
+    if (firstResult) {
+      navigate(firstResult.route);
       onClose();
     }
   };
 
+  const handleResult = (result: AcademicSearchResult) => {
+    saveRecentSearch(searchTerm || result.title);
+    navigate(result.route);
+    onClose();
+  };
+
   // Quick search suggestions
   const quickSearches = [
-    { label: 'Marks & Grades', icon: TrendingUp, color: 'text-green-600' },
-    { label: 'Attendance', icon: Calendar, color: 'text-blue-600' },
-    { label: 'Subjects', icon: BookOpen, color: 'text-purple-600' },
-    { label: 'Analytics', icon: TrendingUp, color: 'text-orange-600' },
+    { label: 'Marks & Grades', route: '/marks', icon: TrendingUp, color: 'text-green-600' },
+    { label: 'Attendance', route: '/attendance', icon: Calendar, color: 'text-blue-600' },
+    { label: 'Subjects', route: '/semesters', icon: BookOpen, color: 'text-purple-600' },
+    { label: 'Analytics', route: '/analytics', icon: TrendingUp, color: 'text-orange-600' },
   ];
 
   if (!isOpen) return null;
@@ -50,7 +54,7 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search notes, papers, subjects..."
+              placeholder="Search subjects, marks, attendance..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
@@ -82,7 +86,11 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
                   <Card
                     key={index}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleSearch(item.label)}
+                    onClick={() => {
+                      saveRecentSearch(item.label);
+                      navigate(item.route);
+                      onClose();
+                    }}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
@@ -106,7 +114,7 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
                     <div
                       key={index}
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => handleSearch(search)}
+                      onClick={() => setSearchTerm(search)}
                     >
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm">{search}</span>
@@ -116,16 +124,40 @@ export function MobileSearchModal({ isOpen, onClose }: MobileSearchModalProps) {
               </div>
             )}
 
-            {/* Search Results Placeholder */}
+            {/* Search Results */}
             {searchTerm && (
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">Search Results</h3>
-                <div className="text-center py-8">
-                  <div className="p-4 rounded-2xl bg-muted/30 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <Search className="w-8 h-8 text-muted-foreground/60" />
+                {results.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="p-4 rounded-2xl bg-muted/30 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <Search className="w-8 h-8 text-muted-foreground/60" />
+                    </div>
+                    <p className="text-muted-foreground">No matching academic records found.</p>
                   </div>
-                  <p className="text-muted-foreground">Search functionality coming soon...</p>
-                </div>
+                ) : (
+                  <div className="space-y-2">
+                    {results.map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        onClick={() => handleResult(result)}
+                        className="w-full rounded-xl border bg-card p-4 text-left transition-colors hover:bg-muted/50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium">{result.title}</p>
+                              <Badge variant="outline" className="capitalize">{result.category}</Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground">{result.description}</p>
+                          </div>
+                          <ArrowRight className="mt-1 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
