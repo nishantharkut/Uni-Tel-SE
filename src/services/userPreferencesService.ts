@@ -60,7 +60,9 @@ function asNumber(value: unknown, fallback: number, min: number, max: number): n
 function mergePreferences(value: unknown): UserPreferences {
   if (!value || typeof value !== 'object') return DEFAULT_USER_PREFERENCES;
   const stored = value as Partial<UserPreferences>;
-  const storedNotifications = stored.notifications ?? {};
+  const storedNotifications = stored.notifications && typeof stored.notifications === 'object'
+    ? stored.notifications as Partial<UserPreferences['notifications']>
+    : {};
 
   return {
     gradeScale: isGradeScale(stored.gradeScale) ? stored.gradeScale : DEFAULT_USER_PREFERENCES.gradeScale,
