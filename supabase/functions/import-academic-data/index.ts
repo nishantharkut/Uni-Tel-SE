@@ -319,7 +319,7 @@ serve(async (req) => {
 
               const { error: marksError } = await supabaseClient
                 .from('marks_records')
-                .insert({
+                .upsert({
                   user_id: user.id,
                   semester_id: semester.id,
                   subject_name: marksData.subject_name,
@@ -330,6 +330,8 @@ serve(async (req) => {
                   exam_date: marksData.exam_date,
                   exam_time: marksData.exam_time,
                   source_json_import: true
+                }, {
+                  onConflict: 'user_id,semester_id,subject_name,exam_type'
                 })
 
               if (marksError) {

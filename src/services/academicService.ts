@@ -39,6 +39,8 @@ export interface Subject {
   updated_at: string;
 }
 
+export type SubjectUpdate = Partial<Omit<Subject, 'id' | 'user_id' | 'grade_points' | 'created_at' | 'updated_at'>>;
+
 export interface AttendanceRecord {
   id: string;
   user_id: string;
@@ -52,6 +54,8 @@ export interface AttendanceRecord {
   created_at: string;
   updated_at: string;
 }
+
+export type AttendanceRecordUpdate = Partial<Omit<AttendanceRecord, 'id' | 'user_id' | 'percentage' | 'created_at' | 'updated_at'>>;
 
 export interface MarksRecord {
   id: string;
@@ -70,6 +74,9 @@ export interface MarksRecord {
   created_at: string;
   updated_at: string;
 }
+
+export type MarksRecordCreate = Omit<MarksRecord, 'id' | 'user_id' | 'percentage' | 'weighted_percentage' | 'created_at' | 'updated_at'>;
+export type MarksRecordUpdate = Partial<Omit<MarksRecord, 'id' | 'user_id' | 'percentage' | 'weighted_percentage' | 'created_at' | 'updated_at'>>;
 
 export interface AcademicSummary {
   user_id: string;
@@ -180,7 +187,7 @@ export const subjectService = {
     return data as Subject;
   },
 
-  async update(id: string, updates: Partial<Subject>) {
+  async update(id: string, updates: SubjectUpdate) {
     const { data, error } = await supabase
       .from('subjects')
       .update(updates)
@@ -241,7 +248,7 @@ export const attendanceService = {
     return data as AttendanceRecord;
   },
 
-  async update(id: string, updates: Partial<AttendanceRecord>) {
+  async update(id: string, updates: AttendanceRecordUpdate) {
     const { data, error } = await supabase
       .from('attendance_records')
       .update(updates)
@@ -312,7 +319,7 @@ export const marksService = {
     return data as MarksRecord[];
   },
 
-  async create(record: Omit<MarksRecord, 'id' | 'user_id' | 'percentage' | 'created_at' | 'updated_at'>) {
+  async create(record: MarksRecordCreate) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -329,7 +336,7 @@ export const marksService = {
     return data as MarksRecord;
   },
 
-  async update(id: string, updates: Partial<MarksRecord>) {
+  async update(id: string, updates: MarksRecordUpdate) {
     const { data, error } = await supabase
       .from('marks_records')
       .update(updates)
