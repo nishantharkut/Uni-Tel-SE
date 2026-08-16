@@ -57,6 +57,6 @@ The instructor announces course assessment distribution, but the ordinance caps 
 
 The current implementation validates a single marks record against these caps. Full aggregate validation per subject and assessment category belongs in the database contract PR.
 
-## Known Follow-up Work
+## Database Contract Status
 
-The frontend and import edge function now share the same rule intent, but the Supabase migration history still contains old grade and exam constraints. The database repair PR must update migrations, generated types, analytics RPCs, and any stored summary functions to match this document.
+The frontend, import edge function, and fresh Supabase baseline now share the same rule intent. The authoritative schema is `supabase/migrations/20260817000000_initial_schema.sql`; generated Supabase types should be regenerated from the new project after the baseline is applied.

@@ -246,6 +246,7 @@ export type Database = {
           grade_points: number | null
           id: string
           is_audit: boolean
+          is_backlog: boolean | null
           name: string
           semester_id: string
           source_json_import: boolean
@@ -259,6 +260,7 @@ export type Database = {
           grade_points?: number | null
           id?: string
           is_audit?: boolean
+          is_backlog?: boolean | null
           name: string
           semester_id: string
           source_json_import?: boolean
@@ -272,6 +274,7 @@ export type Database = {
           grade_points?: number | null
           id?: string
           is_audit?: boolean
+          is_backlog?: boolean | null
           name?: string
           semester_id?: string
           source_json_import?: boolean
@@ -291,31 +294,40 @@ export type Database = {
       user_preferences: {
         Row: {
           attendance_warning_threshold: number
+          attendance_warnings_enabled: boolean
           cgpa_target: number
           created_at: string
+          data_health_alerts_enabled: boolean
           exam_reminder_days: number
+          exam_reminders_enabled: boolean
           grade_scale: string
-          notifications: Json
+          grade_updates_enabled: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           attendance_warning_threshold?: number
+          attendance_warnings_enabled?: boolean
           cgpa_target?: number
           created_at?: string
+          data_health_alerts_enabled?: boolean
           exam_reminder_days?: number
+          exam_reminders_enabled?: boolean
           grade_scale?: string
-          notifications?: Json
+          grade_updates_enabled?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           attendance_warning_threshold?: number
+          attendance_warnings_enabled?: boolean
           cgpa_target?: number
           created_at?: string
+          data_health_alerts_enabled?: boolean
           exam_reminder_days?: number
+          exam_reminders_enabled?: boolean
           grade_scale?: string
-          notifications?: Json
+          grade_updates_enabled?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -352,14 +364,10 @@ export type Database = {
       }
       user_notification_summary: {
         Row: {
-          error_count: number | null
-          info_count: number | null
           latest_notification_at: string | null
-          success_count: number | null
           total_notifications: number | null
-          unread_count: number | null
+          unread_notifications: number | null
           user_id: string | null
-          warning_count: number | null
         }
         Relationships: []
       }
@@ -367,10 +375,6 @@ export type Database = {
     Functions: {
       assessment_weightage_limit: {
         Args: { exam_type: string | null }
-        Returns: number
-      }
-      clean_expired_notifications: {
-        Args: Record<PropertyKey, never>
         Returns: number
       }
       cleanup_orphaned_academic_data: {
@@ -388,8 +392,8 @@ export type Database = {
         Args: { p_semester_id: string; p_subject_name: string; p_user_id: string }
         Returns: number | null
       }
-      get_unread_notifications_count: {
-        Args: { p_user_id: string }
+      get_unread_notification_count: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       get_user_academic_summary: {
@@ -417,8 +421,8 @@ export type Database = {
         Returns: boolean
       }
       mark_all_notifications_read: {
-        Args: { p_user_id: string }
-        Returns: boolean
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       normalize_grade: {
         Args: { grade_letter: string | null }
