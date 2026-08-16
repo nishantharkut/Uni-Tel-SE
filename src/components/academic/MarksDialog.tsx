@@ -13,9 +13,7 @@ import type { MarksRecord } from '@/services/academicService';
 import { useToast } from '@/hooks/use-toast';
 import { FormFieldError } from '@/components/ui/form-field-error';
 import { cn } from '@/lib/utils';
-
-// Custom exam types - user can create their own
-const DEFAULT_EXAM_TYPES = ['Mid Term', 'End Term', 'Quiz', 'Assignment', 'Lab Exam', 'Viva', 'Project', 'Other'];
+import { DEFAULT_EXAM_TYPES, getWeightageLimit, validateAssessmentWeightage, validateExamType } from '@/domain/academicRules';
 
 interface MarksDialogProps {
   open: boolean;
@@ -35,7 +33,7 @@ export function MarksDialog({
     exam_type: '',
     total_marks: 0,
     obtained_marks: 0,
-    weightage: 100,
+    weightage: getWeightageLimit('Other'),
     semester_id: semesterId || '',
     exam_date: '',
     exam_time: ''
@@ -89,7 +87,7 @@ export function MarksDialog({
       exam_type: '',
       total_marks: 0,
       obtained_marks: 0,
-      weightage: 100,
+      weightage: getWeightageLimit('Other'),
       semester_id: semesterId || '',
       exam_date: '',
       exam_time: ''
@@ -115,7 +113,10 @@ export function MarksDialog({
         exam_type: editingRecord.exam_type,
         total_marks: editingRecord.total_marks,
         obtained_marks: editingRecord.obtained_marks,
-        weightage: (editingRecord as any).weightage || 100,
+        weightage: Math.min(
+          (editingRecord as any).weightage || getWeightageLimit(editingRecord.exam_type),
+          getWeightageLimit(editingRecord.exam_type)
+        ),
         semester_id: editingRecord.semester_id,
         exam_date: editingRecord.exam_date || '',
         exam_time: editingRecord.exam_time || ''
@@ -152,6 +153,7 @@ export function MarksDialog({
         return null;
       case 'exam_type':
         if (!value || !String(value).trim()) return 'Exam type is required';
+        if (!validateExamType(String(value))) return 'Exam type must be 2-100 characters';
         return null;
       case 'total_marks':
         const total = Number(value) || 0;
@@ -177,7 +179,9 @@ export function MarksDialog({
       case 'weightage':
         const weight = Number(value) || 0;
         if (weight < 0) return 'Weightage cannot be negative';
-        if (weight > 100) return 'Weightage cannot exceed 100%';
+        if (!validateAssessmentWeightage(formData.exam_type, weight)) {
+          return `Weightage cannot exceed ${getWeightageLimit(formData.exam_type)}% for this assessment type`;
+        }
         return null;
       case 'semester_id':
         if (!value) return 'Please select a semester';
@@ -202,9 +206,20 @@ export function MarksDialog({
       setErrors(prev => ({ ...prev, obtained_marks: obtainedError || undefined }));
     }
     
-    // Special case: if exam_type changes, update selectable subjects
     if (field === 'exam_type') {
-      // This will trigger a re-render and update selectableSubjects
+      const weightageLimit = getWeightageLimit(value);
+      setFormData(prev => ({
+        ...prev,
+        weightage: touched.weightage ? Math.min(prev.weightage, weightageLimit) : weightageLimit
+      }));
+
+      if (touched.weightage) {
+        const adjustedWeightage = Math.min(formData.weightage, weightageLimit);
+        const weightageError = validateAssessmentWeightage(String(value), adjustedWeightage)
+          ? null
+          : `Weightage cannot exceed ${weightageLimit}% for this assessment type`;
+        setErrors(prev => ({ ...prev, weightage: weightageError || undefined }));
+      }
     }
   };
 
@@ -233,7 +248,9 @@ export function MarksDialog({
       total_marks: true,
       obtained_marks: true,
       weightage: true,
-      semester_id: true
+      semester_id: true,
+      exam_date: true,
+      exam_time: true,
     });
     return isValid;
   };
@@ -459,7 +476,7 @@ export function MarksDialog({
                 }}
                 onBlur={(e) => {
                   if (e.target.value === '') {
-                    handleFieldChange('weightage', 100);
+                    handleFieldChange('weightage', getWeightageLimit(formData.exam_type));
                   }
                   handleFieldBlur('weightage');
                 }}
@@ -473,7 +490,7 @@ export function MarksDialog({
               />
               <FormFieldError error={errors.weightage} id="weightage-error" />
               <div className="text-sm text-muted-foreground">
-                This determines how much this exam contributes to the overall subject grade (0-100%)
+                Maximum allowed for this assessment type: {getWeightageLimit(formData.exam_type)}%
               </div>
             </div>
           </div>

@@ -5,12 +5,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Plus, Edit, Trash2, Target, Calendar as CalendarIcon } from 'lucide-react';
+import { Calculator, Plus, Target, Calendar as CalendarIcon } from 'lucide-react';
 import { useCreateMarks, useUpdateMarks, useSemesters, useSubjectsBySemester, useSubjects } from '@/hooks/useAcademic';
 import { useMarks } from '@/hooks/useMarks';
 import type { MarksRecord } from '@/services/academicService';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import {
+  DEFAULT_EXAM_TYPES,
+  getWeightageLimit,
+  validateAssessmentWeightage,
+  validateExamType,
+  validateMarks,
+} from '@/domain/academicRules';
 
 interface CustomMarksDialogProps {
   open: boolean;
@@ -31,7 +37,7 @@ export function CustomMarksDialog({
     exam_type: '',
     total_marks: 0,
     obtained_marks: 0,
-    weightage: 100,
+    weightage: getWeightageLimit('Other'),
     semester_id: semesterId || '',
     exam_date: '',
     exam_time: '',
@@ -90,8 +96,14 @@ export function CustomMarksDialog({
   // Add new custom exam type
   const handleAddExamType = () => {
     if (newExamType.trim() && !customExamTypes.includes(newExamType.trim())) {
-      const updated = [...customExamTypes, newExamType.trim()];
+      const examType = newExamType.trim();
+      const updated = [...customExamTypes, examType];
       saveCustomExamTypes(updated);
+      setFormData({
+        ...formData,
+        exam_type: examType,
+        weightage: getWeightageLimit(examType),
+      });
       setNewExamType('');
       setShowAddExamType(false);
     }
@@ -110,7 +122,7 @@ export function CustomMarksDialog({
       exam_type: '',
       total_marks: 0,
       obtained_marks: 0,
-      weightage: 100,
+      weightage: getWeightageLimit('Other'),
       semester_id: semesterId || '',
       exam_date: '',
       exam_time: '',
@@ -127,7 +139,10 @@ export function CustomMarksDialog({
         exam_type: editingRecord.exam_type,
         total_marks: editingRecord.total_marks,
         obtained_marks: editingRecord.obtained_marks,
-        weightage: (editingRecord as any).weightage || 100,
+        weightage: Math.min(
+          (editingRecord as any).weightage || getWeightageLimit(editingRecord.exam_type),
+          getWeightageLimit(editingRecord.exam_type)
+        ),
         semester_id: editingRecord.semester_id,
         exam_date: editingRecord.exam_date || '',
         exam_time: editingRecord.exam_time || '',
@@ -153,23 +168,17 @@ export function CustomMarksDialog({
     }
     if (!formData.exam_type.trim()) {
       errors.push('Exam type is required');
+    } else if (!validateExamType(formData.exam_type)) {
+      errors.push('Exam type must be 2-100 characters');
     }
     if (!formData.semester_id) {
       errors.push('Semester is required');
     }
-    if (formData.weightage < 0 || formData.weightage > 100) {
-      errors.push('Weightage must be between 0 and 100');
+    if (!validateAssessmentWeightage(formData.exam_type, formData.weightage)) {
+      errors.push(`Weightage cannot exceed ${getWeightageLimit(formData.exam_type)}% for this assessment type`);
     }
-    // Marks are optional - only validate if provided
-    if (formData.total_marks > 0) {
-      if (formData.obtained_marks < 0 || formData.obtained_marks > formData.total_marks) {
-        errors.push('Obtained marks must be between 0 and total marks');
-      }
-    } else if (formData.total_marks === 0 && formData.obtained_marks > 0) {
-      // If total_marks is 0, obtained_marks should also be 0
-      if (formData.obtained_marks < 0) {
-        errors.push('Obtained marks cannot be negative');
-      }
+    if (!validateMarks(formData.obtained_marks, formData.total_marks)) {
+      errors.push('Marks must be non-negative and obtained marks cannot exceed total marks');
     }
 
     if (errors.length > 0) {
@@ -246,6 +255,11 @@ export function CustomMarksDialog({
     return 'Below Average';
   };
 
+  const allExamTypes = [
+    ...DEFAULT_EXAM_TYPES,
+    ...customExamTypes.filter((type) => !DEFAULT_EXAM_TYPES.includes(type as (typeof DEFAULT_EXAM_TYPES)[number])),
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -304,7 +318,7 @@ export function CustomMarksDialog({
                 value={formData.subject_name}
                 onValueChange={(value) => setFormData({ ...formData, subject_name: value })}
               >
-                <SelectTrigger className={cn(errors?.subject_name && "border-destructive")}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select a subject" />
                 </SelectTrigger>
                 <SelectContent>
@@ -336,14 +350,25 @@ export function CustomMarksDialog({
             <div className="space-y-2">
               <Select
                 value={formData.exam_type}
-                onValueChange={(value) => setFormData({ ...formData, exam_type: value })}
+                onValueChange={(value) => {
+                  if (value === '__create_new__') {
+                    setShowAddExamType(true);
+                    return;
+                  }
+
+                  setFormData({
+                    ...formData,
+                    exam_type: value,
+                    weightage: getWeightageLimit(value),
+                  });
+                }}
                 required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select or create exam type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {customExamTypes.map((type) => (
+                  {allExamTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
                     </SelectItem>
@@ -355,7 +380,7 @@ export function CustomMarksDialog({
                 </SelectContent>
               </Select>
 
-              {formData.exam_type === '__create_new__' && (
+              {showAddExamType && (
                 <div className="flex gap-2">
                   <Input
                     value={newExamType}
@@ -396,7 +421,7 @@ export function CustomMarksDialog({
                     if (!isNaN(numValue)) {
                       setFormData({ 
                         ...formData, 
-                        weightage: Math.min(100, Math.max(0, numValue))
+                        weightage: Math.min(getWeightageLimit(formData.exam_type), Math.max(0, numValue))
                       });
                     }
                   }
@@ -404,7 +429,7 @@ export function CustomMarksDialog({
                 required
               />
               <p className="text-xs text-muted-foreground">
-                You can enter marks later. For now, just set the weightage.
+                Maximum allowed for this assessment type: {getWeightageLimit(formData.exam_type)}%
               </p>
             </div>
           </div>
